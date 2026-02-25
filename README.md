@@ -2,6 +2,12 @@
 
 ![KODASİSTANİM Banner](https://raw.githubusercontent.com/umitcancinar/KODASISTANIM.WEBAPP/main/README.png)
 
+---
+[![Kişisel Web Sitem](https://img.shields.io/badge/Kişisel_Web_Sitem-Ziyaret_Et-blue?style=for-the-badge&logo=googlechrome)](https://umitcancinar.me)
+
+[![Canlı Demo](https://img.shields.io/badge/Canlı-Demoyu%20İncele-blue?style=for-the-badge&logo=googlechrome)](https://kodasistanim.netlify.app)
+
+
 **KODASİSTANİM**, tarayıcı üzerinden çalışan, modern, hızlı ve yapay zeka ile güçlendirilmiş profesyonel bir kod editörüdür (IDE). Geliştiricilerin kod yazarken karşılaştıkları hataları çözmelerine, kod yapılarını anlamalarına ve daha verimli çalışmalarına olanak tanıyan tam donanımlı bir ortam sunar.
 
 Sistemin kalbinde, dünya standartlarında **Monaco Editor** (VS Code'un çekirdeği) ve gelişmiş **Groq Llama-3.3-70B** yapay zeka modeli yatmaktadır.
@@ -75,4 +81,4 @@ Bu sayede hem ön yüz (HTML/CSS/JS) sunulacak hem de arka yüz servisleri (`/ap
 
 ---
 
-*Bu proje açık kaynak topluluklarına ve geliştiricilerin daha hızlı, güvenli kod yazabilmesine destek olmak amacıyla geliştirilmiştir.* 🚀
+💬 **Bana Ulaşın:** Projelerim hakkında konuşmak, işbirliği yapmak veya sadece yazılım üzerine sohbet etmek isterseniz bana [websitem](https://umitcancinar.me) üzerinden ulaşabilirsiniz.
