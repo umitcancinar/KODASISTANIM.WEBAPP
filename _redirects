@@ -1,0 +1,2 @@
+/api/chat  /.netlify/functions/api  200
+/api/*  https://api.jdoodle.com/:splat  200
