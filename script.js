@@ -833,10 +833,10 @@ KURALLAR:
 4. Kod verirken Markdown kısmında mutlaka dili (örn \`\`\`javascript) belirt.
 5. Sohbeti kısa, samimi ve Türkçe tut. Geliştirici ile gerçek zamanlı yazışıyormuş gibi davran.
 6. LİSANS VE SÖZDİZİMİ KURALI (ŞİDDETLE UYGULA): Benimle Türkçe sohbet edebilirsin. ANCAK; bana vereceğin Markdown (\`\`\`) içerisindeki HİÇBİR KOD BLOĞUNDA Türkçe karakter (ç, ğ, ı, ö, ş, ü, Ç, Ğ, İ, Ö, Ş, Ü) BULUNAMAZ! 
-   - Değişken isimlerinde SADECE İngilizce alfabe (ASCII) kullan!
-   - Kod içindeki yorum satırlarını (comments) SADECE İngilizce alfabe kullanarak yaz (Orn: // Kullanici girisi kontrolu).
-   - Ekrana basılan metinleri (console.log, print vb.) SADECE İngilizce karakterle yaz (Orn: "Islem basarili").
-   - Bu kuralı ihlal edersen sistem çökecektir. Asla Türkçe karakterli kod üretme!`;
+   - Değişken isimlerinde SADECE ASCII alfabe kullan!
+   - Kodun içindeki açıklamalarda (comments) BİLE ASLA TÜRKÇE KARAKTER KULLANMA! Yorumlarını tamamen İngilizce karakterlerle (Orn: // Kullanici girisi kontrolu gibi) yaz!
+   - Ekranda gösterilecek string/console çıktılarında BİLE Türkçe karakter kullanma (Orn: "Islem basarili").
+   - KODUN İÇİNDE HERHANGİ BİR YERDE TÜRKÇE KARAKTER TESPİT EDİLİRSE SİSTEM ÇÖKECEKTİR. Buna kesin olarak uyacaksın.`;
 
     // Geçmişe kullanıcının mesajını ekle
     conversationHistory.push({ role: "user", content: msg });
