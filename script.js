@@ -1025,11 +1025,46 @@ window.applyAiCode = function (encodedCode, btnElement) {
     }
 };
 
+// MATRIX ARKA PLAN ANİMASYONU OLUŞTURUCU 
+// Terminal/Çıktı panelinin arkasına düşen 0 ve 1'lerden oluşan rastgele kolonlar ekler.
+function startMatrixEffect(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Yeterince dolu görünmesi için 15 adet akan kolon yaratıyoruz
+    const columnsCount = 15;
+
+    for (let i = 0; i < columnsCount; i++) {
+        const column = document.createElement("div");
+        column.className = "matrix-column";
+
+        // Rastgele X (yatay) konumu (% cinsinden)
+        column.style.left = Math.floor(Math.random() * 100) + "%";
+
+        // Rastgele animasyon süresi ve gecikme (birbirlerinden bağımsız akmaları için)
+        column.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        column.style.animationDelay = (Math.random() * 5) + "s";
+
+        // 10-20 karakter uzunluğunda rastgele 0 ve 1'ler dizisi
+        let text = "";
+        const lines = Math.floor(Math.random() * 10) + 10;
+        for (let j = 0; j < lines; j++) {
+            text += Math.random() > 0.5 ? "1\n" : "0\n";
+        }
+        column.innerText = text;
+
+        container.appendChild(column);
+    }
+}
+
 // GLOBAL OLAY DİNLEYİCİLERİ
 // Sayfa tamamen yüklendikten sonra (DOMContentLoaded) çalışır.
 // Enter tuşuna basıldığında (Shift+Enter hariç) AI mesajı otomatik olarak gönderilir.
 // Shift+Enter ise metin kutusunda yeni satır açmayı sağlar.
 document.addEventListener('DOMContentLoaded', () => {
+    // Çıktı Ekranı Arka Planı için Matrix Efektini Başlat
+    startMatrixEffect("matrixBg");
+
     const chatInput = document.getElementById('aiChatInput');
     if (chatInput) {
         chatInput.addEventListener('keydown', function (e) {

@@ -1066,3 +1066,68 @@ body.light-mode .modal-input {
     border-radius: 0;
     background: transparent;
 }
+
+/* ==========================================================================
+   TERMINAL MATRIX BACKGROUND ANIMATION (0 ve 1 Akan Efekt)
+   ========================================================================== */
+#output-panel {
+    position: relative;
+    /* matrix arka planı çıktının arkasında kalacak */
+    overflow: hidden;
+}
+
+.matrix-bg {
+    position: absolute;
+    top: 40px;
+    /* Header alanının altından başla */
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    /* Üzerine tıklanmasını engelle */
+    user-select: none;
+    overflow: hidden;
+    opacity: 0.08;
+    /* Hem aydınlık hem karanlık modda yazıları engellemeyecek kadar şeffaf */
+}
+
+.matrix-column {
+    position: absolute;
+    top: -100%;
+    color: var(--primary-color);
+    font-family: var(--font-code);
+    font-size: 1rem;
+    font-weight: bold;
+    line-height: 1.2;
+    text-shadow: 0 0 5px var(--primary-color);
+    white-space: pre-wrap;
+    word-break: break-all;
+    animation: matrixFall linear infinite;
+}
+
+@keyframes matrixFall {
+    0% {
+        transform: translateY(-10%);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(120%);
+        opacity: 0;
+    }
+}
+
+/* Asıl terminal çıkışının yazılarının matrix arka planının ÜZERİNDE (z-index) görünmesi lazım */
+.output-content {
+    position: relative;
+    z-index: 1;
+}
