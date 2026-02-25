@@ -1078,7 +1078,7 @@ body.light-mode .modal-input {
 
 .matrix-bg {
     position: absolute;
-    top: 40px;
+    top: 0;
     /* Header alanının altından başla */
     left: 0;
     width: 100%;
@@ -1088,16 +1088,16 @@ body.light-mode .modal-input {
     /* Üzerine tıklanmasını engelle */
     user-select: none;
     overflow: hidden;
-    opacity: 0.08;
+    opacity: 0.12;
     /* Hem aydınlık hem karanlık modda yazıları engellemeyecek kadar şeffaf */
 }
 
 .matrix-column {
     position: absolute;
-    top: -100%;
+    top: -150%;
     color: var(--primary-color);
     font-family: var(--font-code);
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: bold;
     line-height: 1.2;
     text-shadow: 0 0 5px var(--primary-color);
@@ -1108,7 +1108,7 @@ body.light-mode .modal-input {
 
 @keyframes matrixFall {
     0% {
-        transform: translateY(-10%);
+        transform: translateY(0);
         opacity: 0;
     }
 
@@ -1121,7 +1121,7 @@ body.light-mode .modal-input {
     }
 
     100% {
-        transform: translateY(120%);
+        transform: translateY(300%);
         opacity: 0;
     }
 }

@@ -1031,8 +1031,8 @@ function startMatrixEffect(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Yeterince dolu görünmesi için 15 adet akan kolon yaratıyoruz
-    const columnsCount = 15;
+    // Tüm div'i kaplaması ve yoğun görünmesi için 35 adet akan kolon yaratıyoruz
+    const columnsCount = 35;
 
     for (let i = 0; i < columnsCount; i++) {
         const column = document.createElement("div");
@@ -1041,13 +1041,13 @@ function startMatrixEffect(containerId) {
         // Rastgele X (yatay) konumu (% cinsinden)
         column.style.left = Math.floor(Math.random() * 100) + "%";
 
-        // Rastgele animasyon süresi ve gecikme (birbirlerinden bağımsız akmaları için)
-        column.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        // Rastgele animasyon süresi (daha hızlı akış için 2-4 saniye arası) ve gecikme
+        column.style.animationDuration = (Math.random() * 2 + 2) + "s";
         column.style.animationDelay = (Math.random() * 5) + "s";
 
-        // 10-20 karakter uzunluğunda rastgele 0 ve 1'ler dizisi
+        // 30-50 karakter uzunluğunda rastgele 0 ve 1'ler dizisi (Uzunca ve devasa bir şelale)
         let text = "";
-        const lines = Math.floor(Math.random() * 10) + 10;
+        const lines = Math.floor(Math.random() * 20) + 30;
         for (let j = 0; j < lines; j++) {
             text += Math.random() > 0.5 ? "1\n" : "0\n";
         }
