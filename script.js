@@ -928,9 +928,12 @@ function parseAIMarkdown(text) {
         const blockId = 'ai-code-block-' + Date.now() + '-' + blockCounter;
         const langLabel = lang ? lang.toUpperCase() : 'CODE';
 
+        // Kodlar panoya veya editöre ham olarak (<, >) aktarılmalı ki yazılım dillerinde hata vermesin.
+        const rawCode = code.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
         // Kodu encode ediyoruz ki HTML butonunun onClick'ine güvenle yazabilelim
         // encodeURIComponent tek tırnakları (') encode etmediği için manuel olarak %27 yapıyoruz
-        const encodedCode = encodeURIComponent(code).replace(/'/g, "%27");
+        const encodedCode = encodeURIComponent(rawCode).replace(/'/g, "%27");
 
         return `
             <div class="ai-code-wrapper">
