@@ -922,7 +922,8 @@ function parseAIMarkdown(text) {
         const langLabel = lang ? lang.toUpperCase() : 'CODE';
 
         // Kodu encode ediyoruz ki HTML butonunun onClick'ine güvenle yazabilelim
-        const encodedCode = encodeURIComponent(code);
+        // encodeURIComponent tek tırnakları (') encode etmediği için manuel olarak %27 yapıyoruz
+        const encodedCode = encodeURIComponent(code).replace(/'/g, "%27");
 
         return `
             <div class="ai-code-wrapper">
