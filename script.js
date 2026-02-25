@@ -831,7 +831,8 @@ KURALLAR:
 2. Açıklamalarından sonra "Size doğru kodu adım adım göstereyim mi?" veya "Denemek ister misiniz, yoksa düzeltilmiş halini vereyim mi?" diye sor.
 3. Eğer kullanıcı kodu isterse ya da "Kodu ver", "Doğrusunu yaz" gibi direktif verirse o zaman KODUN TAMAMINI düzeltilmiş halde Markdown kod bloğu (\`\`\`) ile ver. 
 4. Kod verirken Markdown kısmında mutlaka dili (örn \`\`\`javascript) belirt.
-5. Sohbeti kısa, samimi ve Türkçe tut. Geliştirici ile gerçek zamanlı yazışıyormuş gibi davran.`;
+5. Sohbeti kısa, samimi ve Türkçe tut. Geliştirici ile gerçek zamanlı yazışıyormuş gibi davran.
+6. KRİTİK KURAL: Geliştiriciyle Türkçe sohbet edebilirsin ANCAK bana üreteceğin HİÇBİR KOD BLOKUNUN İÇİNDE (değişken isimleri, konsol çıktıları, fonksiyonlar, string değerler veya yorum satırları dahil) KESİNLİKLE TÜRKÇE KARAKTER (ç, ğ, ı, ö, ş, ü, Ç, Ğ, İ, Ö, Ş, Ü) KULLANMA. İngilizce karakterler kullan.`;
 
     // Geçmişe kullanıcının mesajını ekle
     conversationHistory.push({ role: "user", content: msg });
