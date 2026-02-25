@@ -1,0 +1,995 @@
+:root {
+    /* KARANLIK MOD DEĞİŞKENLERİ (ULTİMATE TEMAsı): Tüm renkler ve efektler buradan merkezi olarak yönetilir. */
+    --bg-dark: #050505;
+    --bg-panel: rgba(20, 20, 25, 0.75);
+    /* Glassmorphism (cam) efekti için yarı saydam kenarlık rengi */
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --primary-color: #00ff9d;
+    /* Ana vurgu rengi: Neon Yeşil - terminaller ve aktif öğeler için */
+    --secondary-color: #00bcd4;
+    /* İkincil vurgu rengi: Neon Mavi - butonlar ve bağlantılar için */
+    --accent-color: #ff0055;
+    /* Üçüncü vurgu rengi: Neon Pembe/Kırmızı - hatalar ve uyarılar için */
+    --text-main: #e0e0e0;
+    --text-dim: #888888;
+    --font-ui: 'Inter', sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
+    --glow-shadow: 0 0 15px rgba(0, 255, 157, 0.15);
+    --modal-bg: #0a0a0c;
+    --error: #ff4444;
+    --success: #00C851;
+}
+
+body.light-mode {
+    /* AÇIK MOD DEĞİŞKENLERİ (KURUMSAL TEMA): Gün ışığında kullanılmak üzere tasarlanmış, daha az kontrast ve koyu renkler kullanılır. */
+    --bg-dark: #f2f4f8;
+    --bg-panel: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --primary-color: #0056b3;
+    --secondary-color: #004488;
+    --accent-color: #d32f2f;
+    --text-main: #333333;
+    --text-dim: #666666;
+    --glow-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --modal-bg: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+    outline: none;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
+/* --- ARKAPLAN EFEKTLERİ ---
+   binaryBg: Matrix tarzı düşen karakter animasyonu için canvas elementi.
+   screen-vignette: Ekranın köşelerini karartarak sinematik bir derinlik hissi yaratır. */
+#binaryBg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.15;
+    /* Arkaplandaki matrix animasyonu çok baskın görünmesin diye düşük opaklık */
+    pointer-events: none;
+}
+
+.screen-vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.85) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* --- ANA UYGULAMA ÇERÇEVESİ (GLASSMORPHISM) ---
+   Tüm uygulamayı saran ana kapsayıcı. backdrop-filter ile gerçek cam (buzlu cam)
+   efekti uygulanır. z-index:2 ile arkaplan efektlerinin üzerinde kalması sağlanır. */
+.app-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    backdrop-filter: blur(12px);
+    background: var(--bg-panel);
+}
+
+/* --- ÜST MENÜ ÇUBUĞU (HEADER) ---
+   Marka logosu, dil seçici ve eylem butonlarını barındıran üst şerit.
+   Glassmorphism efektiyle saydam bir arka plana sahiptir. */
+.glass-header {
+    height: 65px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .glass-header {
+    background: #fff;
+}
+
+.brand-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+}
+
+.glow-effect {
+    animation: iconPulse 3s infinite;
+}
+
+.app-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.brand-text {
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+}
+
+.brand-accent {
+    color: var(--primary-color);
+}
+
+.brand-edition {
+    font-size: 0.5em;
+    background: linear-gradient(45deg, var(--accent-color), #ff5e62);
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+
+/* --- ARAÇ ÇUBUĞU (TOOLBAR) ---
+   Üst menünün sağ kısmında yer alan; dil seçici, tema değiştirici ve
+   çalıştır butonu gibi aksiyona yönelik kontrollerin stil tanımlamaları. */
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Dil Seçici Kutusu: Programlama dili seçimi için özelleştirilmiş açılır menü */
+.cyber-select-wrapper {
+    position: relative;
+}
+
+.lang-select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: var(--font-code);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.lang-select:hover {
+    border-color: var(--primary-color);
+}
+
+body.light-mode .lang-select {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+
+/* İkon Butonlar: Tema değiştirici ve öneri açma/kapama gibi kare ikon butonları.
+   Hover durumunda yukarı kayan ve parlayan (glow) bir animasyon efekti uygulanır. */
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* SİSTEMİ BAŞLAT BUTONU (CYBER STİLİ):
+   Programı çalıştırmak için kullanılan ana eylem butonu.
+   Degradeli arkaplan (secondary → primary renk), hover'da parlama ve
+   üzerinden geçen ışık animasyonu (glitch effect) ile premium görünüm sağlanır. */
+.cyber-button-large {
+    position: relative;
+    height: 40px;
+    padding: 0 30px;
+    background: var(--primary-color);
+    /* Tarayıcı desteği için önce düz renk (yedek), ardından gradient uygulanır */
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+    color: #000;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.btn-glitch-effect {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    transform: skewX(-25deg);
+    transition: 0.5s;
+    z-index: 1;
+}
+
+.cyber-button-large:hover .btn-glitch-effect {
+    left: 150%;
+    transition: 0.7s;
+}
+
+.cyber-button-large:hover {
+    box-shadow: 0 0 20px var(--primary-color);
+    transform: scale(1.02);
+}
+
+/* --- ÇALIŞMA ALANI (EDİTÖR & TERMİNAL) ---
+   Editörü ve terminal panelini yan yana konumlandıran esnek (flex) yerleşim.
+   editor-wrapper: Kodun yazıldığı Monaco editör alanı (ekranın 60'ı).
+   output-panel: Program çıktısının gösterildiği terminal paneli (ekranın %40'ı). */
+.workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    padding: 0;
+}
+
+#editor-wrapper {
+    flex: 6;
+    border-right: 1px solid var(--glass-border);
+    position: relative;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+#editor-container {
+    width: 100%;
+    height: 100%;
+}
+
+#output-panel {
+    flex: 4;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+}
+
+body.light-mode #output-panel {
+    background: #f9f9f9;
+}
+
+.panel-header {
+    height: 40px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+}
+
+body.light-mode .panel-header {
+    background: #e0e0e0;
+}
+
+.header-title {
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.terminal-icon {
+    color: var(--accent-color);
+    margin-right: 5px;
+}
+
+.cyber-link {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: var(--font-code);
+}
+
+.cyber-link:hover {
+    color: var(--error);
+}
+
+.live-indicator {
+    font-size: 0.7rem;
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.blink-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+.output-content {
+    flex: 1;
+    padding: 20px;
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    overflow-y: auto;
+    color: var(--primary-color);
+    line-height: 1.6;
+}
+
+/* Açık modda terminal çıktı metni: Koyu arka plan varsayıldığından açık modda
+   metin okunabilirliğini artırmak için siyah renk ve kalın font uygulanır. */
+body.light-mode .output-content {
+    color: #111 !important;
+    font-weight: 600;
+}
+
+/* TERMİNAL LOG TİPLERİ:
+   log-system: Sistem mesajları (soluk ve italik)
+   log-error: Hata mesajları (kırmızı, solda kırmızı şerit ile vurgulanır)
+   log-success: Başarılı program çıktıları (varsayılan renk)
+   log-exit-success/error: Program sonlanma özeti (bellek ve CPU bilgisi) */
+.log-system {
+    color: var(--text-dim);
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.log-error {
+    color: var(--error);
+    border-left: 2px solid var(--error);
+    padding-left: 10px;
+    margin: 5px 0;
+}
+
+.log-success {
+    color: inherit;
+}
+
+.log-exit-success {
+    margin-top: 15px;
+    border-top: 1px dashed #444;
+    padding-top: 10px;
+    color: var(--success);
+    opacity: 0.8;
+    font-size: 0.8em;
+}
+
+.log-exit-error {
+    margin-top: 15px;
+    border-top: 1px dashed #444;
+    padding-top: 10px;
+    color: var(--error);
+    opacity: 0.8;
+    font-size: 0.8em;
+}
+
+/* --- DURUM ÇUBUĞU (STATUS BAR) ---
+   Alt kısımda yer alan ince bilgi çubuğu. İmlecin satır/sütun konumunu,
+   dosya kodlamasını, geliştirici imzasını ve çalışma durumunu gösterir. */
+.glass-footer {
+    height: 35px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+}
+
+body.light-mode .glass-footer {
+    background: #e0e0e0;
+    color: #444;
+}
+
+.status-left,
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-separator {
+    color: #555;
+}
+
+.engineer-signature {
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.neon-text-anim {
+    animation: neonPulse 3s infinite alternate;
+    color: var(--secondary-color);
+}
+
+.status-badge-ready {
+    background: rgba(0, 255, 157, 0.1);
+    color: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 255, 157, 0.3);
+}
+
+/* --- YÜKLEME ANİMASYONU (CYBER LOADER) ---
+   Kod API'ye gönderilirken dönen bir yükleme göstergesi.
+   Şeffaf kenarlıklı bir daire; üst kenarı primary renkle boyalı ve
+   sonsuz döndürme (spin) animasyonuyla çalışır. */
+.cyber-loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* --- GİRDİ MODAL PENCERESİ ---
+   Kod çalıştırılmadan önce kullanıcıdan girdi toplamak için açılan modal.
+   Tüm ekranı kaplayan yarı saydam bir overlay üzerine ortalanmış şekilde görünür.
+   fadeIn animasyonu ile yumuşak bir açılış efekti sağlanır. */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s;
+}
+
+.cyber-modal {
+    width: 550px;
+    background: var(--modal-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+body.light-mode .cyber-modal {
+    border-color: #ccc;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-main-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.warning-icon {
+    font-size: 1.8rem;
+}
+
+.pulse-animation {
+    animation: iconPulse 2s infinite;
+}
+
+.title-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.title-text span:first-child {
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text-main);
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.cyber-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.cyber-close:hover {
+    color: var(--error);
+}
+
+.modal-body {
+    padding: 25px;
+    max-height: 500px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.info-text {
+    margin: 0 0 15px 0;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    border-left: 3px solid var(--secondary-color);
+    padding-left: 10px;
+}
+
+/* GİRDİ GRUBU: Her değişken sorusu için etiket ve metin kutusu içeren sarmalayıcı.
+   slideIn animasyonu ile aşağıdan yukarıya doğru akıcı biçimde belirir. */
+.input-group {
+    margin-bottom: 15px;
+    animation: slideIn 0.4s ease;
+}
+
+/* GİRDİ ETİKETİ: Kullanıcıya hangi değişkeni girmesi gerektiğini gösteren etiket.
+   white-space: pre-wrap ile uzun soru metinleri uygun şekilde alt satıra kıvrılır. */
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-family: var(--font-code);
+    white-space: pre-wrap;
+    /* Uzun sorular satır sonunda otomatik kıvrılsın */
+    word-wrap: break-word;
+    /* Tek kelime bile olsa taşmayı önlemek için kelime ortasından kır */
+    text-align: left;
+    /* Etiket metni sola hizalansın, ortalama görünümü engeller */
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    color: var(--primary-color);
+    font-family: var(--font-code);
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+body.light-mode .modal-input {
+    background: #fff;
+    border-color: #ccc;
+    color: #000;
+}
+
+.modal-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.1);
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.cyber-button-action {
+    background: var(--primary-color);
+    color: #000;
+    border: none;
+    padding: 10px 25px;
+    font-weight: 800;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.cyber-button-action:hover {
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+.cyber-button-secondary {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cyber-button-secondary:hover {
+    border-color: var(--text-main);
+}
+
+.btn-wizard {
+    background: var(--secondary-color);
+    color: #000;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* TOAST BILDIRI MESAJI:
+   İşlem tamamlandığında kısa süreliğine alt-orta ekranda beliren bildirim balonu.
+   Opaklık ve alt konum geçişiyle yumuşak görünüp kaybolma animasyonu uygulanır. */
+.cyber-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+    z-index: 10000;
+}
+
+.cyber-toast.show {
+    opacity: 1;
+    bottom: 40px;
+}
+
+/* ÖZEL KAYDIRMAÇUBUĞu STİLİ:
+   Webkit tabanlı tarayıcılarda (Chrome, Edge, Safari) kaydırma çubuğunun
+   ince (6px), yuvarlak köşeli ve koyu tonlarda görünmesi sağlanır. */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ===== ANAHTAR KARE ANİMASYONLARI =====
+   spin       : Yükleme göstergesi için 360° döndürme animasyonu
+   iconPulse  : Logo gibi ikonlar için dışarı yayılan yeşil parlama efekti
+   neonPulse  : Durum çubuğundaki imza metninin neon ışıltısı
+   blink      : ONLINE göstergesi için yanıp sönen nokta
+   fadeIn     : Modal ve mesaj balonlarının soluktan belirme efekti
+   slideIn    : Girdi gruplarının aşağıdan yukarıya kayma efekti
+   ============================================ */
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes iconPulse {
+    0% {
+        box-shadow: 0 0 0 rgba(0, 255, 157, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(0, 255, 157, 0);
+    }
+}
+
+@keyframes neonPulse {
+    from {
+        text-shadow: 0 0 5px var(--secondary-color);
+        opacity: 0.8;
+    }
+
+    to {
+        text-shadow: 0 0 20px var(--secondary-color);
+        opacity: 1;
+    }
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* --- YAPAY ZEKA ASİSTAN WİDGET'I ---
+   Ekranın sağ alt köşesine sabitlenmiş float düğme ve sohbet paneli.
+   Düğmeye tıklanınca panel cubic-bezier eğriyle esneyerek açılır.
+   Panel açık değilken pointer-events:none ile tıklama olayları engellenir. */
+#ai-widget-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.ai-toggle-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ai-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 25px rgba(0, 255, 157, 0.6);
+}
+
+.ai-icon {
+    font-size: 24px;
+}
+
+.ai-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 0 5px var(--accent-color);
+}
+
+.ai-chat-panel {
+    width: 500px;
+    height: 640px;
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    background: var(--modal-bg);
+}
+
+#ai-widget-container.open .ai-chat-panel {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ai-api-key-area {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    gap: 10px;
+}
+
+.ai-api-key-area .modal-input {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    height: 35px;
+    flex: 1;
+}
+
+.ai-chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.ai-chat-footer {
+    padding: 15px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    align-items: flex-end;
+}
+
+.ai-chat-footer textarea {
+    resize: none;
+    min-height: 45px;
+    font-family: var(--font-ui);
+    flex: 1;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+#aiSendBtn {
+    height: 45px;
+    padding: 0 15px;
+    border-radius: 6px;
+}
+
+.ai-message {
+    max-width: 92%;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.3s;
+}
+
+.ai-user {
+    align-self: flex-end;
+}
+
+.ai-bot {
+    align-self: flex-start;
+}
+
+.msg-content {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    /* Okunabilirlik için uygun UI font boyutu */
+    line-height: 1.5;
+    word-break: break-word;
+    font-family: var(--font-ui);
+}
+
+.ai-user .msg-content {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    color: #000;
+    font-weight: 600;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-bot .msg-content {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
+}
+
+/* AI MESAJ İÇERİĞİ MARKDOWN FORMATLAMA:
+   AI'dan gelen yanıttaki kod blokları (<pre>), satır içi kod (<code>),
+   paragraflar (<p>) için özel stiller. Syntax highlight için neon yeşil renk
+   ve yatay kaydırma desteği uygulanır. */
+.msg-content pre {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: #00ff9d;
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    margin: 8px 0;
+    max-width: 100%;
+    white-space: pre;
+    word-wrap: normal;
+}
+
+.msg-content p {
+    margin: 5px 0;
+}
+
+.msg-content code {
+    font-family: var(--font-code);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--primary-color);
+}
+
+.ai-thinking {
+    font-style: italic;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+}
