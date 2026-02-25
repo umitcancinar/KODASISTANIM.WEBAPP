@@ -993,3 +993,76 @@ body.light-mode .modal-input {
     display: flex;
     align-items: center;
 }
+
+/* ==========================================================================
+   AI CODE BLOCK & BUTTON STYLES (Kopyala ve Uygula Özellikleri)
+   ========================================================================== */
+.ai-code-wrapper {
+    background: #0a0e14;
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.ai-code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 255, 157, 0.05);
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(0, 255, 157, 0.1);
+}
+
+.ai-code-lang {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    font-family: var(--font-code);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.ai-code-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.ai-code-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-main);
+}
+
+.ai-code-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ai-code-btn.highlight-btn {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: rgba(0, 255, 157, 0.3);
+    color: var(--primary-color);
+}
+
+.ai-code-btn.highlight-btn:hover {
+    background: rgba(0, 255, 157, 0.2);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.4);
+}
+
+.ai-code-wrapper pre {
+    margin: 0;
+    padding: 12px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}

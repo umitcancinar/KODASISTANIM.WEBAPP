@@ -775,6 +775,10 @@ if (savedKey) {
     isUsingCustomKey = true;
 }
 
+// SOHBET HAFIZASI (Gerçek zamanlı sohbet deneyimi için)
+// Asistanın önceki konuşmaları hatırlaması için son N mesajı tutacağımız dizi.
+let conversationHistory = [];
+
 function toggleAIWidget() {
     const container = document.getElementById('ai-widget-container');
     container.classList.toggle('open');
@@ -812,17 +816,43 @@ async function sendAIMessage() {
 
     // AI yanıt üretirken gösterilecek animasyonlu "Düşünüyor..." yükleme göstergesini ekle
     const thinkingId = 'thinking-' + Date.now();
-    appendChatMsg('<span class="ai-thinking">Kodunuz inceleniyor, AI düşünüyor... <div class="cyber-loader" style="width:14px; height:14px; margin-left:8px;"></div></span>', 'ai-bot', thinkingId);
+    appendChatMsg('<span class="ai-thinking">Kodunuz inceleniyor... <div class="cyber-loader" style="width:14px; height:14px; margin-left:8px;"></div></span>', 'ai-bot', thinkingId);
 
     const editorCode = editor ? editor.getValue() : "Mevcut kod bulunamadı.";
 
-    // Sistem komutu - AI'a rolünü öğret
-    const systemPrompt = "Sen 'KODASİSTANİM' IDE'sinde çalışan, uzman ve samimi bir yapay zeka yardımcı programcısın. Geliştirici seninle sağdaki bir sohbet penceresinden iletişim kuruyor. Amacın, kodu inceleyip mantıksal ve sözdizimsel hataları bulmak, geliştiriciye tavsiyeler vermek veya kodu tamamlamaktır. Sıkıcı ve çok uzun metinler yerine net ve Markdown tabanlı kod örnekleriyle cevap ver. Sadece sorulara ve kodun düzeltilmiş haline odaklan.";
+    // SİSTEM KOMUTU (GELİŞMİŞ EĞİTMEN PERSONASI)
+    // Asistana doğrudan kod vermek yerine adım adım rehberlik etmesini,
+    // hataları açıklamasını ve yönlendirici olmasını söylüyoruz.
+    const systemPrompt = `Sen 'KODASİSTANİM' IDE'sinde çalışan, uzman, samimi ve yönlendirici bir yapay zeka programlama asistanısın. 
+Geliştiricinin kodunu inceleyip sorunları bulmak ve ona kodlamayı ÖĞRETMEK ilk amacındır.
+
+KURALLAR:
+1. Geliştirici hata sorarsa, nerede hata yaptığını açıkla ancak hemen tüm kodu düzeltip verme. Önce hatanın mantığını anlat ve ne yapması gerektiğine dair ipucu ver.
+2. Açıklamalarından sonra "Size doğru kodu adım adım göstereyim mi?" veya "Denemek ister misiniz, yoksa düzeltilmiş halini vereyim mi?" diye sor.
+3. Eğer kullanıcı kodu isterse ya da "Kodu ver", "Doğrusunu yaz" gibi direktif verirse o zaman KODUN TAMAMINI düzeltilmiş halde Markdown kod bloğu (\`\`\`) ile ver. 
+4. Kod verirken Markdown kısmında mutlaka dili (örn \`\`\`javascript) belirt.
+5. Sohbeti kısa, samimi ve Türkçe tut. Geliştirici ile gerçek zamanlı yazışıyormuş gibi davran.`;
+
+    // Geçmişe kullanıcının mesajını ekle
+    conversationHistory.push({ role: "user", content: msg });
+
+    // Geçmişteki mesajların sayısını sınırla (Son 10 mesajı - 5 soru 5 cevap - tutsun)
+    if (conversationHistory.length > 10) {
+        conversationHistory = conversationHistory.slice(conversationHistory.length - 10);
+    }
 
     try {
         let payload;
         let endpoint;
         let headers = { 'Content-Type': 'application/json' };
+
+        // API'ye gidecek nihai mesaj listesini hazırla
+        // (Sistem komutu + Kodu bağlam olarak veren ek bilgi + Konuşma geçmişi)
+        const apiMessages = [
+            { role: "system", content: systemPrompt },
+            { role: "system", content: "Geliştiricinin mevcut kodu şudur:\n```\n" + editorCode + "\n```" },
+            ...conversationHistory
+        ];
 
         if (isUsingCustomKey && customApiKey) {
             // KULLANICI KENDİ ANAHTARINI GİRMİŞSE: Direkt Groq'a git
@@ -830,22 +860,15 @@ async function sendAIMessage() {
             headers['Authorization'] = 'Bearer ' + customApiKey;
             payload = {
                 model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: systemPrompt + "\n\nİşte geliştiricinin kodu:\n```\n" + editorCode + "\n```" },
-                    { role: "user", content: msg }
-                ],
+                messages: apiMessages,
                 temperature: 0.7,
                 max_tokens: 2048,
             };
         } else {
             // VARSAYILAN (GÜVENLİ) ÇALIŞMA MODU: İstek arka plan (Backend) servisimize gider
-            // API anahtarı sunucuda gizlidir.
             endpoint = "/api/chat";
             payload = {
-                messages: [
-                    { role: "system", content: systemPrompt + "\n\nİşte geliştiricinin kodu:\n```\n" + editorCode + "\n```" },
-                    { role: "user", content: msg }
-                ],
+                messages: apiMessages,
                 codeSnippet: editorCode
             };
         }
@@ -862,12 +885,19 @@ async function sendAIMessage() {
         if (!response.ok || data.error) {
             let errorMsg = data.error?.message || "Bilinmeyen Sunucu Hatası";
             appendChatMsg(`API Bağlantı Hatası: <br><span style="color:#ff4444">${errorMsg}</span><br>Lütfen API anahtarınızı kontrol edin.`, 'ai-bot');
+            // Hata aldıysa son gönderdiğimiz mesajı geçmişten çıkar ki takılı kalmasın
+            conversationHistory.pop();
         } else if (data.choices && data.choices.length > 0) {
             let aiText = data.choices[0].message.content;
+
+            // Asistanın yanıtını yapay zeka geçmişine (hafızaya) kaydet
+            conversationHistory.push({ role: "assistant", content: aiText });
+
             aiText = parseAIMarkdown(aiText);
             appendChatMsg(aiText, 'ai-bot');
         } else {
-            appendChatMsg("Güvenlik veya başka bir sebepten dolayı AI boş cevap döndürدü.", 'ai-bot');
+            appendChatMsg("Güvenlik veya başka bir sebepten dolayı AI boş cevap döndürdū.", 'ai-bot');
+            conversationHistory.pop();
         }
 
     } catch (err) {
@@ -877,15 +907,35 @@ async function sendAIMessage() {
 }
 
 function parseAIMarkdown(text) {
-    // GÜVENLİK: XSS (Siteler Arası Betik Çalıştırma) saldırılarını önlemek için
-    // AI'dan gelen yanıttaki tüm HTML etiketleri önce HTML varlıklarına dönüştürülür.
+    // GÜVENLİK: XSS (Siteler Arası Betik Çalıştırma) saldırılarını önlemek için HTML'i temizle
     let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    // KOD BLOKLARI: Üç backtick (```) ile çevrelenen kod bloklarını yakala ve
-    // <pre><code> HTML etiketleriyle sar. \s\S pattern'i satır sonu karakterlerini
-    // de kapsaması için tercih edildi (. karakteri varsayılan olarak newline'ı kapsamaz).
-    safeText = safeText.replace(/```(.*?)\n([\s\S]*?)```/g, function (match, lang, code) {
-        return '<pre><code>' + code + '</code></pre>';
+    // Benzersiz ID oluşturucu (Kopyalama ve Uygulama hedefleri için)
+    let blockCounter = 0;
+
+    // KOD BLOKLARI ve BUTON EKLENTİLERİ:
+    // Üç backtick (```) ile çevrelenen kod bloklarını yakala.
+    // Her bloğun üstüne "Kopyala" ve "Koda Uygula" butonlarını içeren bir Header bar ekle
+    safeText = safeText.replace(/```([a-zA-Z0-9+#\-]*)\n([\s\S]*?)```/g, function (match, lang, code) {
+        blockCounter++;
+        const blockId = 'ai-code-block-' + Date.now() + '-' + blockCounter;
+        const langLabel = lang ? lang.toUpperCase() : 'CODE';
+
+        // Kodu encode ediyoruz ki HTML butonunun onClick'ine güvenle yazabilelim
+        const encodedCode = encodeURIComponent(code);
+
+        return `
+            <div class="ai-code-wrapper">
+                <div class="ai-code-header">
+                    <span class="ai-code-lang">${langLabel}</span>
+                    <div class="ai-code-actions">
+                        <button class="ai-code-btn" onclick="copyAiCode('${encodedCode}', this)">📋 Kopyala</button>
+                        <button class="ai-code-btn highlight-btn" onclick="applyAiCode('${encodedCode}', this)">🚀 Koda Uygula</button>
+                    </div>
+                </div>
+                <pre><code id="${blockId}">${code}</code></pre>
+            </div>
+        `;
     });
 
     // SATIR İÇİ KOD: Tek backtick ile çevrelenen kısa kodu <code> etiketiyle sar
@@ -931,6 +981,47 @@ function removeChatMsg(id) {
     const el = document.getElementById(id);
     if (el) el.remove();
 }
+
+// BROWSER GLOBALS: Kopyala ve Koda Uygula butonlarının onclick olayları için fonksiyonlar
+window.copyAiCode = function (encodedCode, btnElement) {
+    const code = decodeURIComponent(encodedCode);
+    navigator.clipboard.writeText(code).then(() => {
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = "✅ Kopyalandı!";
+        btnElement.style.color = "#00ff9d";
+        setTimeout(() => {
+            btnElement.innerHTML = originalText;
+            btnElement.style.color = "";
+        }, 2000);
+    }).catch(err => {
+        showToast("Kopyalama başarısız oldu.");
+        console.error("Panoya kopyalanamadı:", err);
+    });
+};
+
+window.applyAiCode = function (encodedCode, btnElement) {
+    const code = decodeURIComponent(encodedCode);
+
+    // Editör açık ve kurulu mu kontrol et
+    if (editor) {
+        // Mevcut kodun tamamını yeni kodla değiştir
+        // Geliştirilmiş bir versiyonda seçili alanı (selection) değiştirme de yapılabilir
+        editor.setValue(code);
+
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = "✨ Uygulandı!";
+        btnElement.style.color = "#00ff9d";
+
+        showToast("AI kodu başarıyla editöre aktarıldı!");
+
+        setTimeout(() => {
+            btnElement.innerHTML = originalText;
+            btnElement.style.color = "";
+        }, 2000);
+    } else {
+        showToast("Editör hazır değil!");
+    }
+};
 
 // GLOBAL OLAY DİNLEYİCİLERİ
 // Sayfa tamamen yüklendikten sonra (DOMContentLoaded) çalışır.
