@@ -856,7 +856,9 @@ KURALLAR:
         const apiMessages = [
             { role: "system", content: systemPrompt },
             { role: "system", content: "Geliştiricinin mevcut kodu şudur:\n```\n" + editorCode + "\n```" },
-            ...conversationHistory
+            ...conversationHistory,
+            // Modele son anda gönderilen gizli hatırlatma emri (Prompt zedelenmesini önler):
+            { role: "system", content: "ÖNEMLİ HATIRLATMA: Bana sunacağın kodların içerisinde (yorum satırları, değişken isimleri ve konsol çıktıları dahil) KESİNLİKLE Türkçe karakter (ç,ğ,ş,ö,ü,ı) kullanma! Tüm kodları SADECE İngilizce alfabe (ASCII) kullanarak yaz." }
         ];
 
         if (isUsingCustomKey && customApiKey) {
