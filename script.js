@@ -737,58 +737,70 @@ function showToast(msg) {
 }
 
 // MATRIX ARKA PLAN ANİMASYONU (TOGGLELANABİLİR)
-let matrixAnimationId = null;
-let isMatrixRunning = false;
-let matrixCanvas, matrixCtx, matrixW, matrixH, matrixCols, matrixYpos;
+var matrixAnimationId = null;
+var isMatrixRunning = true;
+var matrixCanvas = null;
+var matrixCtx = null;
+var matrixW = 0;
+var matrixH = 0;
+var matrixCols = 0;
+var matrixYpos = [];
 
-function initMatrixAnimation() {
-    matrixCanvas = document.getElementById('binaryBg');
-    if (!matrixCanvas) return;
-    matrixCtx = matrixCanvas.getContext('2d');
-    matrixW = matrixCanvas.width = window.innerWidth;
-    matrixH = matrixCanvas.height = window.innerHeight;
+(function () {
+    var c = document.getElementById('binaryBg');
+    if (!c) return;
+    matrixCanvas = c;
+    matrixCtx = c.getContext('2d');
+    matrixW = c.width = window.innerWidth;
+    matrixH = c.height = window.innerHeight;
     matrixCols = Math.floor(matrixW / 20);
     matrixYpos = Array(matrixCols).fill(0);
-    window.addEventListener('resize', () => {
-        matrixW = matrixCanvas.width = window.innerWidth;
-        matrixH = matrixCanvas.height = window.innerHeight;
+    window.addEventListener('resize', function () {
+        matrixW = c.width = window.innerWidth;
+        matrixH = c.height = window.innerHeight;
     });
-    startMatrixAnim();
-}
-
-function startMatrixAnim() {
-    if (matrixAnimationId) clearInterval(matrixAnimationId);
-    matrixAnimationId = setInterval(() => {
-        matrixCtx.fillStyle = '#0001'; matrixCtx.fillRect(0, 0, matrixW, matrixH);
-        matrixCtx.fillStyle = '#0f0'; matrixCtx.font = '15pt monospace';
-        matrixYpos.forEach((y, i) => {
+    matrixAnimationId = setInterval(function () {
+        matrixCtx.fillStyle = '#0001';
+        matrixCtx.fillRect(0, 0, matrixW, matrixH);
+        matrixCtx.fillStyle = '#0f0';
+        matrixCtx.font = '15pt monospace';
+        matrixYpos.forEach(function (y, i) {
             matrixCtx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
             matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
         });
     }, 50);
-    isMatrixRunning = true;
-}
+})();
 
-window.toggleMatrixAnimation = function () {
+function toggleMatrixAnimation() {
     if (!matrixCanvas) return;
     if (isMatrixRunning) {
         clearInterval(matrixAnimationId);
         matrixAnimationId = null;
         matrixCanvas.style.opacity = '0';
         isMatrixRunning = false;
-        const icon = document.getElementById('matrixIcon');
-        if (icon) icon.innerText = '🔴';
-        showToast("Matrix Animasyonu Durduruldu");
+        var icon = document.getElementById('matrixIcon');
+        if (icon) icon.innerText = '\u{1F534}';
+        showToast('Matrix Animasyonu Durduruldu');
     } else {
         matrixCanvas.style.opacity = '0.15';
         matrixCtx.clearRect(0, 0, matrixW, matrixH);
         matrixYpos = Array(matrixCols).fill(0);
-        startMatrixAnim();
-        const icon = document.getElementById('matrixIcon');
-        if (icon) icon.innerText = '🟢';
-        showToast("Matrix Animasyonu Baslatildi");
+        matrixAnimationId = setInterval(function () {
+            matrixCtx.fillStyle = '#0001';
+            matrixCtx.fillRect(0, 0, matrixW, matrixH);
+            matrixCtx.fillStyle = '#0f0';
+            matrixCtx.font = '15pt monospace';
+            matrixYpos.forEach(function (y, i) {
+                matrixCtx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
+                matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
+            });
+        }, 50);
+        isMatrixRunning = true;
+        var icon2 = document.getElementById('matrixIcon');
+        if (icon2) icon2.innerText = '\u{1F7E2}';
+        showToast('Matrix Animasyonu Baslatildi');
     }
-};
+}
 
 // ============================================================
 // --- YAPAY ZEKA ASİSTAN MANTIĞI (GROQ API - Llama 3.3 70B) ---
@@ -1105,12 +1117,15 @@ function startMatrixEffect(containerId) {
 // Sayfa tamamen yüklendikten sonra (DOMContentLoaded) çalışır.
 // Enter tuşuna basıldığında (Shift+Enter hariç) AI mesajı otomatik olarak gönderilir.
 // Shift+Enter ise metin kutusunda yeni satır açmayı sağlar.
-document.addEventListener('DOMContentLoaded', () => {
-    // Ana matrix arka plan animasyonunu baslat
-    initMatrixAnimation();
-
+document.addEventListener('DOMContentLoaded', function () {
     // Cikti Ekrani Arka Plani icin Matrix Efektini Baslat
-    startMatrixEffect("matrixBg");
+    startMatrixEffect('matrixBg');
+
+    // Matrix toggle butonuna tiklama olayi ekle
+    var matrixBtn = document.getElementById('matrixToggle');
+    if (matrixBtn) {
+        matrixBtn.addEventListener('click', toggleMatrixAnimation);
+    }
 
     const chatInput = document.getElementById('aiChatInput');
     if (chatInput) {
