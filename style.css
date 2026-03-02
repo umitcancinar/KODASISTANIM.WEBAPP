@@ -52,20 +52,7 @@ body {
 }
 
 /* --- ARKAPLAN EFEKTLERİ ---
-   binaryBg: Matrix tarzı düşen karakter animasyonu için canvas elementi.
    screen-vignette: Ekranın köşelerini karartarak sinematik bir derinlik hissi yaratır. */
-#binaryBg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    opacity: 0.15;
-    /* Arkaplandaki matrix animasyonu çok baskın görünmesin diye düşük opaklık */
-    pointer-events: none;
-    transition: opacity 0.5s ease;
-}
 
 .screen-vignette {
     position: fixed;
