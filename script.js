@@ -736,24 +736,59 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// MATRIX ARKA PLAN ANİMASYONU (TOGGLELANABİLİR)
+let matrixAnimationId = null;
+let isMatrixRunning = true;
+let matrixCanvas, matrixCtx, matrixW, matrixH, matrixCols, matrixYpos;
+
 (function () {
-    const c = document.getElementById('binaryBg');
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    let w = c.width = window.innerWidth;
-    let h = c.height = window.innerHeight;
-    const cols = Math.floor(w / 20);
-    const ypos = Array(cols).fill(0);
-    window.addEventListener('resize', () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight; });
-    setInterval(() => {
-        ctx.fillStyle = '#0001'; ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = '#0f0'; ctx.font = '15pt monospace';
-        ypos.forEach((y, i) => {
-            ctx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
-            ypos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
+    matrixCanvas = document.getElementById('binaryBg');
+    if (!matrixCanvas) return;
+    matrixCtx = matrixCanvas.getContext('2d');
+    matrixW = matrixCanvas.width = window.innerWidth;
+    matrixH = matrixCanvas.height = window.innerHeight;
+    matrixCols = Math.floor(matrixW / 20);
+    matrixYpos = Array(matrixCols).fill(0);
+    window.addEventListener('resize', () => {
+        matrixW = matrixCanvas.width = window.innerWidth;
+        matrixH = matrixCanvas.height = window.innerHeight;
+    });
+    matrixAnimationId = setInterval(() => {
+        matrixCtx.fillStyle = '#0001'; matrixCtx.fillRect(0, 0, matrixW, matrixH);
+        matrixCtx.fillStyle = '#0f0'; matrixCtx.font = '15pt monospace';
+        matrixYpos.forEach((y, i) => {
+            matrixCtx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
+            matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
         });
     }, 50);
 })();
+
+function toggleMatrixAnimation() {
+    if (isMatrixRunning) {
+        // Animasyonu durdur
+        clearInterval(matrixAnimationId);
+        matrixAnimationId = null;
+        if (matrixCanvas) matrixCanvas.style.opacity = '0';
+        isMatrixRunning = false;
+        document.getElementById('matrixIcon').innerText = '🔴';
+        showToast("Matrix Animasyonu Durduruldu");
+    } else {
+        // Animasyonu tekrar baslat
+        if (matrixCanvas) matrixCanvas.style.opacity = '0.15';
+        matrixYpos = Array(matrixCols).fill(0);
+        matrixAnimationId = setInterval(() => {
+            matrixCtx.fillStyle = '#0001'; matrixCtx.fillRect(0, 0, matrixW, matrixH);
+            matrixCtx.fillStyle = '#0f0'; matrixCtx.font = '15pt monospace';
+            matrixYpos.forEach((y, i) => {
+                matrixCtx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
+                matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
+            });
+        }, 50);
+        isMatrixRunning = true;
+        document.getElementById('matrixIcon').innerText = '🟢';
+        showToast("Matrix Animasyonu Baslatildi");
+    }
+}
 
 // ============================================================
 // --- YAPAY ZEKA ASİSTAN MANTIĞI (GROQ API - Llama 3.3 70B) ---
