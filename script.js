@@ -238,58 +238,74 @@ function initiateExecution() {
  * yanlışlıkla girdi olarak algılamayı önler.
  */
 function analyzeCodeStructure(code) {
-    let cleanCode = code
+    // 1. String Protector: Çift ve tek tırnaklı metinleri geçici olarak sakla
+    // (Böylece içlerindeki // veya /* ifadelerinin yorum satırı gibi silinmesini engelleriz)
+    let stringMap = new Map();
+    let stringCounter = 0;
+
+    let protectedCode = code.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, match => {
+        let key = `__STR_${stringCounter++}__`;
+        stringMap.set(key, match);
+        return key;
+    });
+
+    // 2. Yorum satırlarını temizle (// ve /* ... */)
+    let cleanCode = protectedCode
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/\/\/.*$/gm, '');
+
+    // 3. String ifadeleri geri yükle
+    for (let [key, val] of stringMap.entries()) {
+        cleanCode = cleanCode.replace(key, val);
+    }
 
     const lines = cleanCode.split('\n');
     const inputs = [];
     let matrixStructure = null;
     let matrixVarName = null;
 
-    let scannerVarName = "input";
-    const scannerMatch = cleanCode.match(/Scanner\s+(\w+)\s*=\s*new\s+Scanner/);
-    if (scannerMatch) scannerVarName = scannerMatch[1];
+    // 4. Dinamik Scanner Tespiti (Çoklu Scanner ve Tam Yol Desteği)
+    let scannerVarNames = ["input", "scanner", "scan", "sc", "in"];
+    const scannerMatches = [...cleanCode.matchAll(/(?:java\.util\.)?Scanner\s+(\w+)\s*=\s*new\s+(?:java\.util\.)?Scanner/g)];
+    if (scannerMatches.length > 0) {
+        scannerVarNames = scannerMatches.map(m => m[1]);
+    }
+    const scannerOrPart = scannerVarNames.map(name => `\\b${name}\\.(?:next|nextInt|nextDouble|nextLine|nextBoolean)\\b`).join('|');
 
+    // Mümkün olan tüm input fonksiyonları için Regex kümesi
     const strictInputRegex = new RegExp(
-        `(\\b${scannerVarName}\\.(next|nextInt|nextDouble|nextLine|nextBoolean)\\b)` +
+        `(${scannerOrPart})` +
         `|(\\bConsole\\.ReadLine\\b)` +
         `|(\\binput\\s*\\()` +
         `|(\\bcin\\s*>>)` +
         `|(\\bfmt\\.Scan)`
     );
 
-    const printRegex = /(?:print|Write|console\.log|fmt\.Print|System\.out\.print)(?:ln|f)?\s*\((.*)\)/;
+    const printRegex = /(?:print|Write|console\.log|fmt\.Print|System\.out\.print)(?:ln|f)?\s*\((.*?)\)/;
     let lastPrint = null;
 
-    const matrixDeclRegex = /(?:int|double|String)\s*\[\s*\]\s*\[\s*\]\s*(\w+)\s*=\s*new\s+\w+\s*\[\s*(\d+)\s*\](?:\s*\[\s*(\d+)\s*\])?/;
-    const matrixMatch = code.match(matrixDeclRegex);
+    // 5. Matris ve Dizi Algılama (Değişkenisimli Boyutları da Algılar. Örn: new int[n][m])
+    const matrixDeclRegex = /(?:int|double|String|float|long|char)\s*\[\s*\]\s*(?:\[\s*\]\s*)?(\w+)\s*=\s*new\s+\w+\s*\[\s*([a-zA-Z0-9_]+)\s*\](?:\s*\[\s*([a-zA-Z0-9_]+)\s*\])?/;
+    const matrixMatch = cleanCode.match(matrixDeclRegex);
 
     if (matrixMatch) {
         matrixVarName = matrixMatch[1];
+        let r = parseInt(matrixMatch[2]);
+        let c = matrixMatch[3] ? parseInt(matrixMatch[3]) : 0;
+
         matrixStructure = {
             type: matrixMatch[3] ? "2D" : "1D",
             rowRef: matrixMatch[2],
-            colRef: matrixMatch[3],
-            rows: parseInt(matrixMatch[2]),
-            cols: matrixMatch[3] ? parseInt(matrixMatch[3]) : 0
+            colRef: matrixMatch[3] || null,
+            rows: isNaN(r) ? matrixMatch[2] : r, // "n" gibi bir değişkense string olarak tut
+            cols: isNaN(c) ? (matrixMatch[3] || 0) : c
         };
-    } else {
-        const arrayRegex = /new\s+\w+\s*\[\s*(\d+)\s*\](?:\s*\[\s*(\d+)\s*\])?/;
-        const arrayMatch = code.match(arrayRegex);
-        if (arrayMatch) {
-            matrixStructure = {
-                type: arrayMatch[2] ? "2D" : "1D",
-                rowRef: arrayMatch[1],
-                colRef: arrayMatch[2],
-                rows: parseInt(arrayMatch[1]),
-                cols: arrayMatch[2] ? parseInt(arrayMatch[2]) : 0
-            };
-        }
     }
 
+    // Döngü sınırlarını takip için (Süslü parantezli ve parantezsiz for/while algılama)
     let currentBraceLevel = 0;
     let loopStack = [];
+    let implicitLoopNextLine = false;
 
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim();
@@ -299,17 +315,27 @@ function analyzeCodeStructure(code) {
         const closeBraces = (line.match(/\}/g) || []).length;
         const isLoopStart = /^(?:for|while|do)\b/.test(line);
 
+        // Kapsam (Scope) Takibi
         if (isLoopStart) {
-            loopStack.push(currentBraceLevel + 1);
+            if (openBraces > 0) {
+                loopStack.push(currentBraceLevel + 1);
+            } else {
+                implicitLoopNextLine = true; // Süslü parantezi olmayan, tek satırlık döngü
+            }
+        } else if (implicitLoopNextLine && strictInputRegex.test(line)) {
+            loopStack.push(currentBraceLevel + 1); // Yapay olarak bir scope seviyesi ekle
+            implicitLoopNextLine = false;
+        } else if (implicitLoopNextLine && !isLoopStart) {
+            implicitLoopNextLine = false;
         }
 
+        // Print yakalama (Kullanıcıya sorulacak label/etiket için)
         const pMatch = line.match(printRegex);
         if (pMatch) {
             let rawContent = pMatch[1];
             const quoteMatch = rawContent.match(/"([^"]+)"/);
-
             if (quoteMatch && quoteMatch[1].length > 1) {
-                lastPrint = quoteMatch[1].replace(/[:=]/g, '').trim();
+                lastPrint = quoteMatch[1].replace(/[:=_]/g, '').trim();
             } else {
                 let content = rawContent.replace(/["';+]/g, '').trim();
                 content = content.replace(/\(.*?\)/g, '');
@@ -317,10 +343,13 @@ function analyzeCodeStructure(code) {
             }
         }
 
+        // Input fonksiyonu mu kullanılıyor?
         if (strictInputRegex.test(line)) {
-            const isNextLine = line.includes("nextLine");
+            const isNextLine = line.includes("nextLine") || line.includes("ReadLine");
             const hasAssignment = line.includes("=");
-            if (isNextLine && !hasAssignment && !line.includes("print")) {
+
+            // "Ghost input fix": Sırf buffer boşaltmak için girilen nextLine()'ı es geç
+            if (isNextLine && !hasAssignment && !line.includes("print") && !line.includes("push") && !line.includes("append")) {
                 lastPrint = null;
                 continue;
             }
@@ -329,23 +358,34 @@ function analyzeCodeStructure(code) {
             let varName = assignMatch ? assignMatch[1] : null;
             if (varName && varName.includes("[")) varName = varName.split("[")[0];
 
-            if (matrixStructure && matrixStructure.rows > 0) {
+            // Python input("prompt") desteği
+            let pyPromptMatch = line.match(/input\s*\(\s*(["'])(.*?)\1\s*\)/);
+            if (pyPromptMatch && pyPromptMatch[2]) {
+                lastPrint = pyPromptMatch[2].replace(/[:=_]/g, '').trim();
+            }
+
+            const activeLoopLevel = loopStack.length > 0 ? loopStack[loopStack.length - 1] : -1;
+            const isInLoop = activeLoopLevel !== -1 && (currentBraceLevel + openBraces >= activeLoopLevel || implicitLoopNextLine === false);
+
+            // Matris içerisindeki döngü girdilerini atla (Çünkü Aşama 2'de ızgara (grid) ile sorulacak)
+            if (matrixStructure && (matrixStructure.rows > 0 || isNaN(matrixStructure.rows))) {
                 if (varName && varName === matrixVarName) {
                     lastPrint = null;
+                    if (activeLoopLevel === currentBraceLevel + 1 && closeBraces === 0) loopStack.pop();
                     continue;
                 }
-                if (!varName && loopStack.length > 0 && currentBraceLevel >= loopStack[loopStack.length - 1]) {
+                if (!varName && isInLoop) {
                     lastPrint = null;
+                    if (activeLoopLevel === currentBraceLevel + 1 && closeBraces === 0) loopStack.pop();
                     continue;
                 }
             }
 
+            // Etiket Belirleme
             let label = lastPrint;
             if (!label || label.length < 2) {
                 label = varName ? (varName + " Değeri") : "Girdi";
             }
-
-            const isInLoop = loopStack.length > 0 && currentBraceLevel + openBraces >= loopStack[loopStack.length - 1];
 
             inputs.push({
                 id: inputs.length,
@@ -357,6 +397,11 @@ function analyzeCodeStructure(code) {
             });
 
             lastPrint = null;
+
+            // Eğer yapay (süslü parantezsiz) döngü ise scope'u kapat
+            if (activeLoopLevel === currentBraceLevel + 1 && closeBraces === 0 && line.indexOf('{') === -1) {
+                loopStack.pop();
+            }
         }
 
         currentBraceLevel += (openBraces - closeBraces);
