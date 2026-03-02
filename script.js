@@ -738,10 +738,10 @@ function showToast(msg) {
 
 // MATRIX ARKA PLAN ANİMASYONU (TOGGLELANABİLİR)
 let matrixAnimationId = null;
-let isMatrixRunning = true;
+let isMatrixRunning = false;
 let matrixCanvas, matrixCtx, matrixW, matrixH, matrixCols, matrixYpos;
 
-(function () {
+function initMatrixAnimation() {
     matrixCanvas = document.getElementById('binaryBg');
     if (!matrixCanvas) return;
     matrixCtx = matrixCanvas.getContext('2d');
@@ -753,6 +753,11 @@ let matrixCanvas, matrixCtx, matrixW, matrixH, matrixCols, matrixYpos;
         matrixW = matrixCanvas.width = window.innerWidth;
         matrixH = matrixCanvas.height = window.innerHeight;
     });
+    startMatrixAnim();
+}
+
+function startMatrixAnim() {
+    if (matrixAnimationId) clearInterval(matrixAnimationId);
     matrixAnimationId = setInterval(() => {
         matrixCtx.fillStyle = '#0001'; matrixCtx.fillRect(0, 0, matrixW, matrixH);
         matrixCtx.fillStyle = '#0f0'; matrixCtx.font = '15pt monospace';
@@ -761,34 +766,29 @@ let matrixCanvas, matrixCtx, matrixW, matrixH, matrixCols, matrixYpos;
             matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
         });
     }, 50);
-})();
+    isMatrixRunning = true;
+}
 
-function toggleMatrixAnimation() {
+window.toggleMatrixAnimation = function () {
+    if (!matrixCanvas) return;
     if (isMatrixRunning) {
-        // Animasyonu durdur
         clearInterval(matrixAnimationId);
         matrixAnimationId = null;
-        if (matrixCanvas) matrixCanvas.style.opacity = '0';
+        matrixCanvas.style.opacity = '0';
         isMatrixRunning = false;
-        document.getElementById('matrixIcon').innerText = '🔴';
+        const icon = document.getElementById('matrixIcon');
+        if (icon) icon.innerText = '🔴';
         showToast("Matrix Animasyonu Durduruldu");
     } else {
-        // Animasyonu tekrar baslat
-        if (matrixCanvas) matrixCanvas.style.opacity = '0.15';
+        matrixCanvas.style.opacity = '0.15';
+        matrixCtx.clearRect(0, 0, matrixW, matrixH);
         matrixYpos = Array(matrixCols).fill(0);
-        matrixAnimationId = setInterval(() => {
-            matrixCtx.fillStyle = '#0001'; matrixCtx.fillRect(0, 0, matrixW, matrixH);
-            matrixCtx.fillStyle = '#0f0'; matrixCtx.font = '15pt monospace';
-            matrixYpos.forEach((y, i) => {
-                matrixCtx.fillText(String.fromCharCode(Math.random() * 128), i * 20, y);
-                matrixYpos[i] = (y > 100 + Math.random() * 10000) ? 0 : y + 20;
-            });
-        }, 50);
-        isMatrixRunning = true;
-        document.getElementById('matrixIcon').innerText = '🟢';
+        startMatrixAnim();
+        const icon = document.getElementById('matrixIcon');
+        if (icon) icon.innerText = '🟢';
         showToast("Matrix Animasyonu Baslatildi");
     }
-}
+};
 
 // ============================================================
 // --- YAPAY ZEKA ASİSTAN MANTIĞI (GROQ API - Llama 3.3 70B) ---
@@ -1106,7 +1106,10 @@ function startMatrixEffect(containerId) {
 // Enter tuşuna basıldığında (Shift+Enter hariç) AI mesajı otomatik olarak gönderilir.
 // Shift+Enter ise metin kutusunda yeni satır açmayı sağlar.
 document.addEventListener('DOMContentLoaded', () => {
-    // Çıktı Ekranı Arka Planı için Matrix Efektini Başlat
+    // Ana matrix arka plan animasyonunu baslat
+    initMatrixAnimation();
+
+    // Cikti Ekrani Arka Plani icin Matrix Efektini Baslat
     startMatrixEffect("matrixBg");
 
     const chatInput = document.getElementById('aiChatInput');

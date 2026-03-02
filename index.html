@@ -25,7 +25,8 @@
         <header class="glass-header">
             <div class="brand-area">
                 <div class="logo-wrapper glow-effect">
-                    <span style="font-size: 24px;">🚀</span>
+                    <img src="https://raw.githubusercontent.com/umitcancinar/KODASISTANIM.WEBAPP/main/FAV%C4%B0CON.jpg"
+                        alt="Logo" class="app-logo">
                 </div>
                 <div class="brand-text">
                     KOD<span class="brand-accent">ASISTANIM</span>
@@ -54,7 +55,8 @@
                     <span id="suggestionIcon">💡</span>
                 </button>
 
-                <button id="matrixToggle" class="btn-icon glow-hover" title="Matrix Animasyonunu Aç/Kapat" onclick="toggleMatrixAnimation()">
+                <button id="matrixToggle" class="btn-icon glow-hover" title="Matrix Animasyonunu Aç/Kapat"
+                    onclick="toggleMatrixAnimation()">
                     <span id="matrixIcon">🟢</span>
                 </button>
 
@@ -74,21 +76,7 @@
             </div>
 
             <div id="output-panel">
-                <div class="panel-header">
-                    <div class="header-left">
-                        <button class="btn-text cyber-link" onclick="clearOutput()">
-                            <span class="icon-trash">🗑️</span> TEMİZLE
-                        </button>
-                    </div>
-                    <div class="header-title">
-                        <span class="terminal-icon">_></span> TERMINAL
-                    </div>
-                    <div class="header-right">
-                        <div class="live-indicator">
-                            <span class="blink-dot"></span> ONLINE
-                        </div>
-                    </div>
-                </div>
+
                 <!-- Çıktı Ekranı Matrix Arka Plan Animasyonu -->
                 <div class="matrix-bg" id="matrixBg"></div>
                 <div class="output-content custom-scrollbar" id="outputContent"></div>
@@ -161,8 +149,9 @@
          Panel açıkken kullanıcı editördeki kodunu AI'ya sorabilir. -->
     <div id="ai-widget-container">
         <button id="ai-toggle-btn" class="ai-toggle-btn glow-hover" onclick="toggleAIWidget()">
-            <span class="ai-icon">✨</span>
+            <span class="ai-icon">🤖</span>
             <span class="ai-badge">AI</span>
+            <span class="ai-label">Kod Asistan</span>
         </button>
 
         <div id="ai-chat-panel" class="ai-chat-panel cyber-modal">
