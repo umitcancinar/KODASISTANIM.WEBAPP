@@ -72,13 +72,6 @@ Bu sayede hem ön yüz (HTML/CSS/JS) sunulacak hem de arka yüz servisleri (`/ap
 - **Responsive Dizayn:** Tam ekran ve akıcı bir çalışma deneyimi.
 - **Neon Efektler:** Hover geçişleri, tıklanabilir butonlar ve aktif sekmelerde özel parlama (glow) animasyonları.
 
-### 📝 Katkıda Bulunma (Contributing)
-1. Bu projeyi "Fork"layın (Sağ üstten Fork butonuna tıklayın).
-2. Kendi özelliklerinizi ekleyeceğiniz yeni bir dal açın: `git checkout -b ozellik/YeniHarikaOzelik`
-3. Değişikliklerinizi commit edin: `git commit -m 'Yeni harika özellik eklendi'`
-4. Dalınızı (branch) yollayın: `git push origin ozellik/YeniHarikaOzelik`
-5. Bir "Pull Request" (Çekme İsteği) oluşturun.
-
 ---
 
 💬 **Bana Ulaşın:** Projelerim hakkında konuşmak, işbirliği yapmak veya sadece yazılım üzerine sohbet etmek isterseniz bana [websitem](https://umitcancinar.me) üzerinden ulaşabilirsiniz.
