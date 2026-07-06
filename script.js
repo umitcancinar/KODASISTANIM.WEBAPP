@@ -1622,6 +1622,21 @@ document.addEventListener('DOMContentLoaded', function () {
             startX = e.clientX;
             startWidth = nbPanel.getBoundingClientRect().width;
 
+            // Minimap (ve editör) bozulmasını önlemek için editor/output'u
+            // geçici olarak explicit pixel moduna (flex: none) alıyoruz.
+            const ew = document.getElementById('editor-wrapper');
+            const op = document.getElementById('output-panel');
+            let startEw = 0, startOp = 0;
+            
+            if (ew && op) {
+                startEw = ew.getBoundingClientRect().width;
+                startOp = op.getBoundingClientRect().width;
+                ew.style.flex = 'none';
+                ew.style.width = startEw + 'px';
+                op.style.flex = 'none';
+                op.style.width = startOp + 'px';
+            }
+
             const minWidth = 250;
             const maxWidth = Math.min(700, window.innerWidth * 0.55);
 
@@ -1635,6 +1650,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     nbPanel.style.width = newWidth + 'px';
                     nbPanel.style.minWidth = newWidth + 'px';
+
+                    // Notebook büyüdüğünde geri kalan alanı orantılı şekilde küçült (pixel bazında)
+                    if (ew && op) {
+                        const actualDelta = newWidth - startWidth; // pozitifse nb büyüdü
+                        const totalOther = startEw + startOp;
+                        if (totalOther > 0) {
+                            const ewRatio = startEw / totalOther;
+                            const opRatio = startOp / totalOther;
+                            ew.style.width = (startEw - (actualDelta * ewRatio)) + 'px';
+                            op.style.width = (startOp - (actualDelta * opRatio)) + 'px';
+                        }
+                    }
+
                     layoutEditor();
                 });
             }
