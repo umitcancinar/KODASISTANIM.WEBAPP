@@ -165,7 +165,7 @@ require(['vs/editor/editor.main'], function () {
         language: 'java',
         theme: 'vs-dark',
         automaticLayout: true,   // Pencere boyutu değiştiğinde editörü otomatik ayarla
-        minimap: { enabled: false }, // Performans ve resize buglarını önlemek için minimap kapalı
+        minimap: { enabled: true }, // Sağ kenar küçük kod haritasını göster
         fontSize: 14,
         fontFamily: "'JetBrains Mono', monospace",
         scrollBeyondLastLine: false, // Son satırın ötesine kaydırmayı engelle
@@ -1581,19 +1581,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 if (rafId) cancelAnimationFrame(rafId);
-
-                // Drag sonucu: pixel genişlikleri flex ratio'ya dönüştür
-                const finalEditorW = editorWrapper.getBoundingClientRect().width;
-                const finalOutputW = outputPanel.getBoundingClientRect().width;
-                const total = finalEditorW + finalOutputW;
-                if (total > 0) {
-                    const editorRatio = Math.round((finalEditorW / total) * 100) / 10;
-                    const outputRatio = Math.round((finalOutputW / total) * 100) / 10;
-                    editorWrapper.style.flex = editorRatio.toString();
-                    editorWrapper.style.width = '';
-                    outputPanel.style.flex = outputRatio.toString();
-                    outputPanel.style.width = '';
-                }
                 layoutEditor();
             }
 
@@ -1620,19 +1607,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nbResizer && nbPanel) {
         let isDragging = false;
         let rafId = null;
-        let layoutTimer = null;
         let startX = 0;
         let startWidth = 0;
-
-        // Debounced layout — sürükleme sırasında editörü her frame'de
-        // yeniden çizmek yerine 80ms aralıklarla güncelle (titreşim önlenir)
-        function debouncedLayout() {
-            if (layoutTimer) return; // zaten bekleyen var
-            layoutTimer = setTimeout(function () {
-                layoutTimer = null;
-                layoutEditor();
-            }, 80);
-        }
 
         nbResizer.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -1659,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     nbPanel.style.width = newWidth + 'px';
                     nbPanel.style.minWidth = newWidth + 'px';
-                    debouncedLayout();
+                    layoutEditor();
                 });
             }
 
@@ -1670,8 +1646,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 if (rafId) cancelAnimationFrame(rafId);
-                if (layoutTimer) { clearTimeout(layoutTimer); layoutTimer = null; }
-                // Bırakınca kesin bir layout yap
                 layoutEditor();
             }
 
