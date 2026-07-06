@@ -1620,8 +1620,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nbResizer && nbPanel) {
         let isDragging = false;
         let rafId = null;
+        let layoutTimer = null;
         let startX = 0;
         let startWidth = 0;
+
+        // Debounced layout — sürükleme sırasında editörü her frame'de
+        // yeniden çizmek yerine 80ms aralıklarla güncelle (titreşim önlenir)
+        function debouncedLayout() {
+            if (layoutTimer) return; // zaten bekleyen var
+            layoutTimer = setTimeout(function () {
+                layoutTimer = null;
+                layoutEditor();
+            }, 80);
+        }
 
         nbResizer.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -1643,13 +1654,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (rafId) cancelAnimationFrame(rafId);
 
                 rafId = requestAnimationFrame(function () {
-                    // Sola sürükleme = genişletme (delta negatif = büyüt)
                     const delta = startX - e2.clientX;
                     const newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + delta));
 
                     nbPanel.style.width = newWidth + 'px';
                     nbPanel.style.minWidth = newWidth + 'px';
-                    layoutEditor();
+                    debouncedLayout();
                 });
             }
 
@@ -1660,6 +1670,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 if (rafId) cancelAnimationFrame(rafId);
+                if (layoutTimer) { clearTimeout(layoutTimer); layoutTimer = null; }
+                // Bırakınca kesin bir layout yap
                 layoutEditor();
             }
 
