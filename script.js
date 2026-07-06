@@ -165,7 +165,7 @@ require(['vs/editor/editor.main'], function () {
         language: 'java',
         theme: 'vs-dark',
         automaticLayout: true,   // Pencere boyutu değiştiğinde editörü otomatik ayarla
-        minimap: { enabled: true }, // Sağ kenar küçük kod haritasını göster
+        minimap: { enabled: false }, // Performans ve resize buglarını önlemek için minimap kapalı
         fontSize: 14,
         fontFamily: "'JetBrains Mono', monospace",
         scrollBeyondLastLine: false, // Son satırın ötesine kaydırmayı engelle
