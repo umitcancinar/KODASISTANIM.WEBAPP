@@ -1061,10 +1061,6 @@ window.applyAiCode = function (encodedCode, btnElement) {
 };
 
 
-// GLOBAL OLAY DİNLEYİCİLERİ
-// Sayfa tamamen yüklendikten sonra (DOMContentLoaded) çalışır.
-// Enter tuşuna basıldığında (Shift+Enter hariç) AI mesajı otomatik olarak gönderilir.
-// Shift+Enter ise metin kutusunda yeni satır açmayı sağlar.
 document.addEventListener('DOMContentLoaded', function () {
 
     const chatInput = document.getElementById('aiChatInput');
@@ -1077,3 +1073,358 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// ============================================================
+// ===== NOT DEFTERİ (NOTEBOOK) SİSTEMİ =====
+// LocalStorage tabanlı, her cihaza özel kod not defteri.
+// Mevcut hiçbir fonksiyona dokunulmamış, tamamen ek blok olarak eklenmiştir.
+// ============================================================
+
+const NOTEBOOK_KEY = 'kodasistanim_notebook_v1';
+const NOTEBOOK_WARN_KEY = 'kodasistanim_nb_warn_dismissed';
+
+/**
+ * LocalStorage'dan notları al
+ */
+function getNotes() {
+    try {
+        const raw = localStorage.getItem(NOTEBOOK_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+/**
+ * Notları LocalStorage'a kaydet
+ */
+function saveNotes(notes) {
+    try {
+        localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(notes));
+    } catch (e) {
+        showToast('Depolama hatası! Tarayıcı izin vermedi.');
+    }
+}
+
+/**
+ * Not defteri panelini aç/kapat
+ */
+window.toggleNotebook = function () {
+    const panel = document.getElementById('notebook-panel');
+    const btn   = document.getElementById('notebookToggle');
+    const isOpen = panel.classList.contains('open');
+
+    if (isOpen) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+    } else {
+        panel.classList.add('open');
+        btn.classList.add('active');
+        renderNotebook();
+        showNotebookWarning();
+    }
+};
+
+/**
+ * Uyarı bandını göster (sadece daha önce kapatılmadıysa)
+ */
+function showNotebookWarning() {
+    const dismissed = sessionStorage.getItem(NOTEBOOK_WARN_KEY);
+    const banner = document.getElementById('nbWarningBanner');
+    if (!banner) return;
+    if (dismissed) {
+        banner.classList.add('hidden');
+    } else {
+        banner.classList.remove('hidden');
+    }
+}
+
+/**
+ * Kullanıcı uyarı bandını kapattı
+ */
+window.dismissWarning = function () {
+    sessionStorage.setItem(NOTEBOOK_WARN_KEY, '1');
+    const banner = document.getElementById('nbWarningBanner');
+    if (banner) banner.classList.add('hidden');
+};
+
+/**
+ * Kaydet modalını aç
+ */
+window.openSaveModal = function () {
+    const modal = document.getElementById('saveModal');
+    if (!modal) return;
+    const nameInput = document.getElementById('noteNameInput');
+    if (nameInput) {
+        nameInput.value = '';
+    }
+    modal.classList.add('active');
+    setTimeout(() => { if (nameInput) nameInput.focus(); }, 120);
+
+    // Enter ile kaydet
+    if (nameInput && !nameInput._nbListener) {
+        nameInput._nbListener = true;
+        nameInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmSaveCode();
+            }
+        });
+    }
+};
+
+/**
+ * Kaydet modalını kapat
+ */
+window.closeSaveModal = function () {
+    const modal = document.getElementById('saveModal');
+    if (modal) modal.classList.remove('active');
+};
+
+/**
+ * Kaydet modalı onaylandı — kodu kaydet
+ */
+window.confirmSaveCode = function () {
+    const nameInput = document.getElementById('noteNameInput');
+    const name = nameInput ? nameInput.value.trim() : '';
+
+    if (!name) {
+        nameInput && nameInput.focus();
+        nameInput && (nameInput.style.borderColor = 'var(--accent-color)');
+        setTimeout(() => {
+            if (nameInput) nameInput.style.borderColor = '';
+        }, 800);
+        showToast('Lütfen bir isim girin!');
+        return;
+    }
+
+    // Editörden kodu ve dili al
+    const code = (typeof editor !== 'undefined' && editor) ? editor.getValue() : '';
+    const langEl = document.getElementById('languageSelector');
+    const lang   = langEl ? langEl.value : 'java';
+
+    const note = {
+        id:   'nb_' + Date.now(),
+        name: name,
+        lang: lang,
+        code: code,
+        date: new Date().toLocaleString('tr-TR', {
+            day:    '2-digit',
+            month:  '2-digit',
+            year:   'numeric',
+            hour:   '2-digit',
+            minute: '2-digit'
+        })
+    };
+
+    const notes = getNotes();
+    notes.unshift(note); // En yeni en üste
+    saveNotes(notes);
+
+    closeSaveModal();
+    showToast(`"${name}" not defterine kaydedildi! 📓`);
+
+    // Panel kapalıysa aç ve render et
+    const panel = document.getElementById('notebook-panel');
+    if (!panel.classList.contains('open')) {
+        toggleNotebook();
+    } else {
+        renderNotebook();
+    }
+};
+
+/**
+ * Not defterini render et (tüm kartlar)
+ */
+function renderNotebook() {
+    const area  = document.getElementById('nbCardsArea');
+    const empty = document.getElementById('nbEmptyState');
+    if (!area) return;
+
+    const notes = getNotes();
+
+    // Mevcut kartları temizle (empty state hariç)
+    Array.from(area.children).forEach(child => {
+        if (child.id !== 'nbEmptyState') child.remove();
+    });
+
+    if (notes.length === 0) {
+        if (empty) empty.style.display = 'flex';
+        return;
+    }
+
+    if (empty) empty.style.display = 'none';
+
+    notes.forEach(note => {
+        const card = buildNoteCard(note);
+        area.appendChild(card);
+    });
+}
+
+/**
+ * Tek bir not kartı DOM elementi oluştur
+ */
+function buildNoteCard(note) {
+    const card = document.createElement('div');
+    card.className = 'nb-card';
+    card.dataset.id = note.id;
+
+    const langClass = 'lang-' + (note.lang || 'default');
+    const langLabel = getLangLabel(note.lang);
+    const highlighted = highlightCode(note.code, note.lang);
+
+    card.innerHTML = `
+        <div class="nb-card-header" onclick="toggleNoteCard('${note.id}')">
+            <span class="nb-card-lang-badge ${langClass}">${langLabel}</span>
+            <span class="nb-card-name" title="${escapeHtml(note.name)}">${escapeHtml(note.name)}</span>
+            <span class="nb-card-date">${note.date}</span>
+            <span class="nb-card-chevron">▼</span>
+        </div>
+        <div class="nb-card-body">
+            <div class="nb-card-actions">
+                <button class="nb-action-btn nb-btn-download" onclick="downloadNoteAsDoc('${note.id}')">
+                    📥 Word İndir
+                </button>
+                <button class="nb-action-btn nb-btn-delete" onclick="deleteNote('${note.id}')">
+                    🗑 Sil
+                </button>
+            </div>
+            <div class="nb-code-preview">${highlighted}</div>
+        </div>
+    `;
+
+    return card;
+}
+
+/**
+ * Kart açma/kapama toggle
+ */
+window.toggleNoteCard = function (id) {
+    const card = document.querySelector(`.nb-card[data-id="${id}"]`);
+    if (!card) return;
+    card.classList.toggle('expanded');
+};
+
+/**
+ * Notu sil
+ */
+window.deleteNote = function (id) {
+    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
+    let notes = getNotes();
+    notes = notes.filter(n => n.id !== id);
+    saveNotes(notes);
+    renderNotebook();
+    showToast('Not silindi.');
+};
+
+/**
+ * Notu Word (.doc) olarak indir — imzalı
+ */
+window.downloadNoteAsDoc = function (id) {
+    const notes = getNotes();
+    const note  = notes.find(n => n.id === id);
+    if (!note) return;
+
+    const langLabel = getLangLabel(note.lang);
+    const signature = `\n${'─'.repeat(60)}\nBu kod, Ümitcan ÇİNAR tarafından geliştirilen KODASİSTANIM\nkullanılarak yazılmış ve not defterine kaydedilmiştir.\nTarih: ${note.date} | Dil: ${langLabel}\nhttps://kodasistanim.netlify.app\n${'─'.repeat(60)}`;
+
+    const content = [
+        `${note.name}`,
+        `${'═'.repeat(60)}`,
+        `Tarih : ${note.date}`,
+        `Dil   : ${langLabel}`,
+        `${'═'.repeat(60)}`,
+        ``,
+        note.code,
+        signature
+    ].join('\n');
+
+    // Blob ile .doc indirme (Word açabilir)
+    const blob = new Blob(['\ufeff' + content], {
+        type: 'application/msword;charset=utf-8'
+    });
+
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeFileName = note.name.replace(/[^a-z0-9ığüşöçİĞÜŞÖÇ\s-]/gi, '').trim() || 'kod';
+    link.href     = url;
+    link.download = `${safeFileName} - KODASİSTANIM.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`"${note.name}" indirildi! 📥`);
+};
+
+/* ---- YARDIMCI FONKSİYONLAR ---- */
+
+function getLangLabel(lang) {
+    const labels = {
+        java: 'Java', python: 'Python', javascript: 'JavaScript',
+        csharp: 'C#', cpp: 'C++', go: 'Go', typescript: 'TypeScript'
+    };
+    return labels[lang] || (lang ? lang.toUpperCase() : 'KOD');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/**
+ * Basit sözdizimi renklendirici
+ * Monaco gibi tam özellikli değil ama görsel kalite için yeterli
+ */
+function highlightCode(code, lang) {
+    if (!code) return '';
+    let safe = escapeHtml(code);
+
+    // Dile göre keyword setleri
+    const javaKeywords   = ['public','private','protected','static','void','class','new','return','import','if','else','for','while','do','try','catch','finally','throw','throws','extends','implements','interface','abstract','final','this','super','null','true','false','boolean','int','double','float','long','char','String','Scanner','System'];
+    const pyKeywords     = ['def','class','import','from','return','if','elif','else','for','while','in','not','and','or','True','False','None','print','input','range','len','type','int','float','str','list','dict','tuple','set'];
+    const jsKeywords     = ['const','let','var','function','return','if','else','for','while','class','new','import','export','default','async','await','true','false','null','undefined','typeof','instanceof','this','=>','console','require'];
+    const csKeywords     = ['using','public','private','class','static','void','new','return','if','else','for','while','namespace','Console','string','int','bool','double','float'];
+    const cppKeywords    = ['include','using','namespace','std','int','double','float','char','bool','return','if','else','for','while','void','class','new','delete','cout','cin','endl'];
+    const goKeywords     = ['package','import','func','var','const','return','if','else','for','range','type','struct','interface','go','chan','defer','select','nil','true','false','fmt','Println'];
+    const tsKeywords     = ['const','let','var','function','return','if','else','for','while','class','new','import','export','type','interface','extends','implements','async','await','string','number','boolean','any','void','null','undefined'];
+
+    const kwMap = { java: javaKeywords, python: pyKeywords, javascript: jsKeywords, csharp: csKeywords, cpp: cppKeywords, go: goKeywords, typescript: tsKeywords };
+    const keywords = kwMap[lang] || [];
+
+    // 1. String'leri koru
+    const parts = [];
+    let idx = 0;
+    safe = safe.replace(/(&quot;)(.*?)(&quot;)|(&apos;)(.*?)(&apos;)/g, (m) => {
+        const key = `__STR${idx++}__`;
+        parts.push({ key, html: `<span class="syn-string">${m}</span>` });
+        return key;
+    });
+
+    // 2. Yorumları renklendir
+    safe = safe.replace(/(\/\/[^\n]*)/g, '<span class="syn-comment">$1</span>');
+    safe = safe.replace(/(#[^\n]*)/g, '<span class="syn-comment">$1</span>');
+
+    // 3. Sayıları renklendir
+    safe = safe.replace(/\b(\d+\.?\d*)\b/g, '<span class="syn-number">$1</span>');
+
+    // 4. Keyword'leri renklendir
+    if (keywords.length) {
+        const kwRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
+        safe = safe.replace(kwRegex, '<span class="syn-keyword">$1</span>');
+    }
+
+    // 5. Fonksiyon çağrılarını renklendir (word + parantez)
+    safe = safe.replace(/\b([a-zA-Z_]\w*)(?=\s*\()/g, (m, fn) => {
+        if (keywords.includes(fn)) return m;
+        return `<span class="syn-function">${fn}</span>`;
+    });
+
+    // 6. Noktalama işaretlerini renklendir
+    safe = safe.replace(/([{}()\[\];])/g, '<span class="syn-punct">$1</span>');
+
+    // 7. String placeholder'larını geri yükle
+    parts.forEach(p => { safe = safe.replace(p.key, p.html); });
+
+    return safe;
+}

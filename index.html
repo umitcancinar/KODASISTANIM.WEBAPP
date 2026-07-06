@@ -29,6 +29,11 @@
                     KOD<span class="brand-accent">ASISTANIM</span>
                     <span class="brand-edition">PROFESSIONAL</span>
                 </div>
+                <!-- KODU KAYDET BUTONU: Sol üstte brand metninin yanında -->
+                <button id="saveCodeBtn" class="btn-save-code glow-hover" onclick="openSaveModal()" title="Kodu Not Defterine Kaydet">
+                    <span class="save-icon">💾</span>
+                    <span class="save-label">Kodu Kaydet</span>
+                </button>
             </div>
 
             <div class="toolbar-right">
@@ -52,6 +57,11 @@
                     <span id="suggestionIcon">💡</span>
                 </button>
 
+                <!-- NOT DEFTERİ TOGGLE BUTONU: Sağ üstte ikonların yanında -->
+                <button id="notebookToggle" class="btn-icon glow-hover btn-notebook" onclick="toggleNotebook()" title="Not Defteri">
+                    <span id="notebookIcon">📓</span>
+                </button>
+
                 <button id="runBtn" class="btn btn-primary cyber-button-large" onclick="initiateExecution()">
                     <span class="btn-content">
                         <span class="icon-play">▶️</span>
@@ -71,6 +81,35 @@
 
 
                 <div class="output-content custom-scrollbar" id="outputContent"></div>
+            </div>
+
+            <!-- NOT DEFTERİ PANELİ: Sağdan slide-in açılan Apple tarzı not defteri -->
+            <div id="notebook-panel" class="notebook-panel custom-scrollbar">
+                <div class="nb-header">
+                    <div class="nb-title-area">
+                        <span class="nb-icon">📓</span>
+                        <div class="nb-title-text">
+                            <span class="nb-title">Not Defterim</span>
+                            <span class="nb-subtitle">Kaydedilen Kodlar</span>
+                        </div>
+                    </div>
+                    <button class="nb-close-btn" onclick="toggleNotebook()" title="Kapat">×</button>
+                </div>
+
+                <div class="nb-warning-banner" id="nbWarningBanner">
+                    <span class="nb-warn-icon">⚠️</span>
+                    <span class="nb-warn-text">Bu notlar <strong>yerel hafızada</strong> geçici depolanır. Kalıcı tutmak için <strong>indirin</strong>.</span>
+                    <button class="nb-warn-close" onclick="dismissWarning()" title="Kapat">×</button>
+                </div>
+
+                <div class="nb-cards-area" id="nbCardsArea">
+                    <!-- Notlar buraya dinamik olarak eklenir -->
+                    <div class="nb-empty-state" id="nbEmptyState">
+                        <div class="nb-empty-icon">📝</div>
+                        <div class="nb-empty-title">Henüz not yok</div>
+                        <div class="nb-empty-desc">"Kodu Kaydet" butonuna basarak<br>ilk kodunu ekle!</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -190,6 +229,39 @@
                     rows="2"></textarea>
                 <button id="aiSendBtn" class="cyber-button-action" onclick="sendAIMessage()">
                     <span>Gönder</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KODU KAYDET MODAL: İsim sormak için hafif overlay -->
+    <div id="saveModal" class="modal-overlay backdrop-blur">
+        <div class="modal-box cyber-modal save-modal-box">
+            <div class="modal-bg-glow"></div>
+            <div class="modal-header">
+                <div class="header-main-title">
+                    <div class="warning-icon-wrapper">
+                        <span class="warning-icon">💾</span>
+                    </div>
+                    <div class="title-text">
+                        <span>KODU KAYDET</span>
+                        <span class="subtitle">Not defterine eklenecek...</span>
+                    </div>
+                </div>
+                <button class="modal-close cyber-close" onclick="closeSaveModal()">×</button>
+            </div>
+            <div class="modal-body" style="padding: 25px;">
+                <label class="input-label" for="noteNameInput">Kod Adı / Başlık</label>
+                <input type="text" id="noteNameInput" class="modal-input" placeholder="Örn: Fibonacci Dizisi, BFS Algoritması..." maxlength="60" autocomplete="off">
+                <div style="margin-top: 12px; font-size: 0.8rem; color: var(--text-dim);">
+                    Dil otomatik algılanacak. Notlar cihazınızın yerel hafızasına kaydedilir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary cyber-button-secondary" onclick="closeSaveModal()">İPTAL</button>
+                <button class="btn btn-primary cyber-button-action" onclick="confirmSaveCode()">
+                    <span class="btn-content"><span class="btn-text">KAYDET</span></span>
+                    <div class="shimmer"></div>
                 </button>
             </div>
         </div>
