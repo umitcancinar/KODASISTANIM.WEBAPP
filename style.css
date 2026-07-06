@@ -269,9 +269,9 @@ body.light-mode .lang-select {
 
 #editor-wrapper {
     flex: 6;
-    border-right: 1px solid var(--glass-border);
     position: relative;
     background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 #editor-container {
@@ -1457,24 +1457,27 @@ body.light-mode .notebook-panel {
 /* KART EYLEMLER */
 .nb-card-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
-    padding: 0 14px 10px;
+    padding: 8px 12px 10px;
     align-items: center;
 }
 
 .nb-action-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
+    gap: 4px;
+    padding: 5px 10px;
     border-radius: 6px;
-    font-size: 0.73rem;
+    font-size: 0.72rem;
     font-weight: 700;
     font-family: var(--font-ui);
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nb-btn-download {
@@ -1954,4 +1957,133 @@ body.light-mode .notebook-panel {
    Kapalıyken width:0 ve flex içinden çıkmaz gibi davranır */
 .notebook-panel {
     flex-shrink: 0 !important;
+}
+
+/* ==========================================================================
+   SÜRÜKLENEBİLİR PANEL AYIRICILAR (SPLITTERS & RESIZERS)
+   ==========================================================================
+   Profesyonel IDE deneyimi: Editor ↔ Output ve Notebook sol kenarı
+   sürüklenebilir. Hover durumunda neon çizgi belirginleşir.
+   ========================================================================== */
+
+/* --- ANA SPLITTER: Editor ↔ Output Panel --- */
+.panel-splitter {
+    flex-shrink: 0;
+    width: 6px;
+    cursor: col-resize;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: background 0.2s ease;
+}
+
+.panel-splitter:hover {
+    background: rgba(0, 255, 157, 0.06);
+}
+
+.panel-splitter.dragging {
+    background: rgba(0, 255, 157, 0.1);
+}
+
+.splitter-line {
+    width: 2px;
+    height: 100%;
+    background: var(--glass-border);
+    border-radius: 2px;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.panel-splitter:hover .splitter-line {
+    width: 3px;
+    background: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.4), 0 0 20px rgba(0, 255, 157, 0.15);
+}
+
+.panel-splitter.dragging .splitter-line {
+    width: 3px;
+    background: var(--primary-color);
+    box-shadow: 0 0 12px rgba(0, 255, 157, 0.6), 0 0 30px rgba(0, 255, 157, 0.25);
+}
+
+body.light-mode .panel-splitter:hover .splitter-line {
+    background: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 86, 179, 0.3);
+}
+
+/* --- NOTEBOOK RESIZER: Sol Kenar --- */
+.nb-resizer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: background 0.2s ease;
+}
+
+.nb-resizer:hover {
+    background: rgba(255, 214, 0, 0.08);
+}
+
+.nb-resizer.dragging {
+    background: rgba(255, 214, 0, 0.12);
+}
+
+.nb-resizer-line {
+    width: 2px;
+    height: 60px;
+    background: rgba(255, 214, 0, 0.2);
+    border-radius: 3px;
+    transition: all 0.25s ease;
+}
+
+.nb-resizer:hover .nb-resizer-line {
+    width: 3px;
+    height: 80px;
+    background: rgba(255, 214, 0, 0.7);
+    box-shadow: 0 0 10px rgba(255, 214, 0, 0.4), 0 0 25px rgba(255, 214, 0, 0.15);
+}
+
+.nb-resizer.dragging .nb-resizer-line {
+    width: 3px;
+    height: 100px;
+    background: rgba(255, 214, 0, 0.9);
+    box-shadow: 0 0 14px rgba(255, 214, 0, 0.6), 0 0 35px rgba(255, 214, 0, 0.25);
+}
+
+/* Notebook panel position relative for the resizer absolute positioning */
+.notebook-panel {
+    position: relative;
+}
+
+/* Sürükleme sırasında metin seçimini engelle */
+body.splitter-dragging {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    cursor: col-resize !important;
+}
+
+body.splitter-dragging iframe,
+body.splitter-dragging #editor-container {
+    pointer-events: none !important;
+}
+
+/* Splitter / Resizer sadece desktop'ta çalışır */
+@media (max-width: 767px) {
+    .panel-splitter {
+        display: none !important;
+    }
+
+    .nb-resizer {
+        display: none !important;
+    }
 }

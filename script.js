@@ -1471,3 +1471,209 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 150);
     });
 });
+
+// ============================================================
+// ===== SÜRÜKLENEBİLİR PANEL AYIRICILAR (SPLITTERS) =====
+// Profesyonel IDE deneyimi: mousedown → mousemove → mouseup
+// ile panel boyutlarını gerçek zamanlı değiştirme.
+// requestAnimationFrame ile 60fps performanslı sürükleme.
+// ============================================================
+
+(function () {
+    'use strict';
+
+    // --- YARDIMCI ---
+    function layoutEditor() {
+        if (typeof editor !== 'undefined' && editor) {
+            editor.layout();
+        }
+    }
+
+    // ==========================================================
+    // 1) ANA SPLITTER: Editor ↔ Output Panel
+    // ==========================================================
+    const mainSplitter = document.getElementById('main-splitter');
+    const editorWrapper = document.getElementById('editor-wrapper');
+    const outputPanel = document.getElementById('output-panel');
+
+    if (mainSplitter && editorWrapper && outputPanel) {
+        let isDragging = false;
+        let rafId = null;
+
+        mainSplitter.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            isDragging = true;
+            mainSplitter.classList.add('dragging');
+            document.body.classList.add('splitter-dragging');
+
+            // Mevcut boyutları px'e çevir (flex'ten çıkar)
+            const editorRect = editorWrapper.getBoundingClientRect();
+            const outputRect = outputPanel.getBoundingClientRect();
+            editorWrapper.style.flex = 'none';
+            editorWrapper.style.width = editorRect.width + 'px';
+            outputPanel.style.flex = 'none';
+            outputPanel.style.width = outputRect.width + 'px';
+
+            const workspace = editorWrapper.parentElement;
+            const workspaceRect = workspace.getBoundingClientRect();
+
+            // Notebook panelin genişliğini hesaba kat
+            const notebookPanel = document.getElementById('notebook-panel');
+            const nbWidth = notebookPanel ? notebookPanel.getBoundingClientRect().width : 0;
+            const splitterW = mainSplitter.getBoundingClientRect().width;
+            const availableWidth = workspaceRect.width - nbWidth - splitterW;
+
+            const minEditor = 200;
+            const minOutput = 150;
+
+            function onMouseMove(e2) {
+                if (!isDragging) return;
+                if (rafId) cancelAnimationFrame(rafId);
+
+                rafId = requestAnimationFrame(function () {
+                    const mouseX = e2.clientX - workspaceRect.left;
+                    let newEditorW = mouseX;
+                    let newOutputW = availableWidth - newEditorW;
+
+                    // Min/Max kısıtları
+                    if (newEditorW < minEditor) {
+                        newEditorW = minEditor;
+                        newOutputW = availableWidth - newEditorW;
+                    }
+                    if (newOutputW < minOutput) {
+                        newOutputW = minOutput;
+                        newEditorW = availableWidth - newOutputW;
+                    }
+
+                    editorWrapper.style.width = newEditorW + 'px';
+                    outputPanel.style.width = newOutputW + 'px';
+                    layoutEditor();
+                });
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                mainSplitter.classList.remove('dragging');
+                document.body.classList.remove('splitter-dragging');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (rafId) cancelAnimationFrame(rafId);
+                layoutEditor();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Çift tıklama ile varsayılana dön (60/40 oranı)
+        mainSplitter.addEventListener('dblclick', function () {
+            editorWrapper.style.flex = '6';
+            editorWrapper.style.width = '';
+            outputPanel.style.flex = '4';
+            outputPanel.style.width = '';
+            layoutEditor();
+        });
+    }
+
+    // ==========================================================
+    // 2) NOTEBOOK RESIZER: Not Defteri Sol Kenar
+    // ==========================================================
+    const nbResizer = document.getElementById('notebook-resizer');
+    const nbPanel = document.getElementById('notebook-panel');
+
+    if (nbResizer && nbPanel) {
+        let isDragging = false;
+        let rafId = null;
+
+        nbResizer.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!nbPanel.classList.contains('open')) return;
+
+            isDragging = true;
+            nbResizer.classList.add('dragging');
+            document.body.classList.add('splitter-dragging');
+
+            const workspace = nbPanel.parentElement;
+            const workspaceRect = workspace.getBoundingClientRect();
+
+            const minWidth = 250;
+            const maxWidth = Math.min(700, workspaceRect.width * 0.55);
+
+            function onMouseMove(e2) {
+                if (!isDragging) return;
+                if (rafId) cancelAnimationFrame(rafId);
+
+                rafId = requestAnimationFrame(function () {
+                    // Mouse X'ten yeni genişlik hesapla (sağ kenardan sola)
+                    const newWidth = workspaceRect.right - e2.clientX;
+                    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+                    nbPanel.style.width = clampedWidth + 'px';
+                    nbPanel.style.minWidth = clampedWidth + 'px';
+                    layoutEditor();
+                });
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                nbResizer.classList.remove('dragging');
+                document.body.classList.remove('splitter-dragging');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (rafId) cancelAnimationFrame(rafId);
+                layoutEditor();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Çift tıklama ile varsayılana dön (380px)
+        nbResizer.addEventListener('dblclick', function (e) {
+            e.stopPropagation();
+            nbPanel.style.width = '';
+            nbPanel.style.minWidth = '';
+            layoutEditor();
+        });
+    }
+
+    // ==========================================================
+    // 3) TOUCH DESTEĞI (Tablet/Dokunmatik Ekran)
+    // ==========================================================
+    function addTouchSupport(handle) {
+        if (!handle) return;
+
+        handle.addEventListener('touchstart', function (e) {
+            const touch = e.touches[0];
+            const mouseDown = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                bubbles: true
+            });
+            handle.dispatchEvent(mouseDown);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function (e) {
+            if (!document.body.classList.contains('splitter-dragging')) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseMove = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                bubbles: true
+            });
+            document.dispatchEvent(mouseMove);
+        }, { passive: false });
+
+        document.addEventListener('touchend', function () {
+            if (!document.body.classList.contains('splitter-dragging')) return;
+            const mouseUp = new MouseEvent('mouseup', { bubbles: true });
+            document.dispatchEvent(mouseUp);
+        });
+    }
+
+    addTouchSupport(mainSplitter);
+    addTouchSupport(nbResizer);
+
+})();
