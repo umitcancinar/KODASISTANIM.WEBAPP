@@ -1130,6 +1130,18 @@ window.toggleNotebook = function () {
         if (workspace) workspace.classList.add('notebook-open');
         renderNotebook();
         showNotebookWarning();
+        
+        // İlk giriş bilgilendirme popup'ı kontrolü
+        const infoShown = localStorage.getItem('notebookInfoPopupShown');
+        if (!infoShown) {
+            const infoModal = document.getElementById('notebookInfoModal');
+            if (infoModal) {
+                // Biraz gecikmeyle açalım ki animasyon güzel görünsün
+                setTimeout(() => {
+                    infoModal.classList.add('active');
+                }, 300);
+            }
+        }
     }
 
     // Editor ve output paneli flex layout'a sıfırla
@@ -1143,6 +1155,19 @@ window.toggleNotebook = function () {
     setTimeout(function () {
         if (typeof editor !== 'undefined' && editor) editor.layout();
     }, 400);
+};
+
+window.closeNotebookInfo = function(event) {
+    if(event) {
+        // Eğer fonksiyona overlay'den tıklandıysa ve hedefin kendisi değilse kapatma
+        // event.stopPropagation() html'de eklendiği için box içi tıklamalar buraya düşmez.
+    }
+    const infoModal = document.getElementById('notebookInfoModal');
+    if (infoModal) {
+        infoModal.classList.remove('active');
+        // Bir daha göstermemek için localstorage'a kaydet
+        localStorage.setItem('notebookInfoPopupShown', 'true');
+    }
 };
 
 /**

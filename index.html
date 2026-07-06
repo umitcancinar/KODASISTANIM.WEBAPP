@@ -278,6 +278,30 @@
     </div>
 
     <div id="toast" class="cyber-toast">İşlem Tamamlandı</div>
+
+    <!-- NOT DEFTERİ İLK GİRİŞ BİLGİLENDİRME MODALI (Glassmorphism / Apple Style) -->
+    <div id="notebookInfoModal" class="modal-overlay glass-modal-overlay" onclick="closeNotebookInfo(event)">
+        <div class="glass-modal-box" onclick="event.stopPropagation()">
+            <div class="glass-modal-header">
+                <div class="glass-icon-wrapper">
+                    <span class="glass-icon">📓</span>
+                </div>
+                <h3 class="glass-title">Not Defterim</h3>
+                <button class="glass-close" onclick="closeNotebookInfo(event)">×</button>
+            </div>
+            <div class="glass-modal-body">
+                <p>Buraya kaydedilen bilgiler cihazınızın <strong>yerel hafızasına (Local Storage)</strong> kaydedilir.</p>
+                <p>Güvenli ve uzun süreli kayıt sağlamak için istediğiniz zaman notlarınızı <strong>Word (.doc)</strong> formatında indirebilirsiniz.</p>
+            </div>
+            <div class="glass-modal-footer">
+                <button class="btn glass-btn" onclick="closeNotebookInfo(event)">Anladım</button>
+            </div>
+            <div class="glass-signature">
+                Ümitcan ÇİNAR / KODASİSTANİM
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
         function clearOutput() {
