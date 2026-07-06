@@ -1318,6 +1318,9 @@ function buildNoteCard(note) {
     const langLabel = getLangLabel(note.lang);
     const highlighted = highlightCode(note.code, note.lang);
 
+    const rawCode = note.code.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+    const encodedCode = encodeURIComponent(rawCode).replace(/'/g, "%27");
+
     card.innerHTML = `
         <div class="nb-card-header" onclick="toggleNoteCard('${note.id}')">
             <span class="nb-card-lang-badge ${langClass}">${langLabel}</span>
@@ -1327,6 +1330,8 @@ function buildNoteCard(note) {
         </div>
         <div class="nb-card-body">
             <div class="nb-card-actions">
+                <button class="nb-action-btn nb-btn-copy" onclick="copyAiCode('${encodedCode}', this)">📋 Kopyala</button>
+                <button class="nb-action-btn nb-btn-apply" onclick="applyAiCode('${encodedCode}', this)">🚀 Koda Uygula</button>
                 <button class="nb-action-btn nb-btn-download" onclick="downloadNoteAsDoc('${note.id}')">
                     📥 Word İndir
                 </button>

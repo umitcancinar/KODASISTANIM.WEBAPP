@@ -1483,6 +1483,29 @@ body.light-mode .notebook-panel {
     flex-shrink: 0;
 }
 
+.nb-btn-copy {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-main);
+}
+
+.nb-btn-copy:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nb-btn-apply {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: rgba(0, 255, 157, 0.3);
+    color: var(--primary-color);
+}
+
+.nb-btn-apply:hover {
+    background: rgba(0, 255, 157, 0.2);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.4);
+}
+
 .nb-btn-download {
     background: rgba(0, 188, 212, 0.12);
     border-color: rgba(0, 188, 212, 0.3);
