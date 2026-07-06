@@ -1548,3 +1548,410 @@ body.light-mode .notebook-panel {
     border-color: var(--primary-color);
     box-shadow: 0 0 14px rgba(0, 255, 157, 0.15);
 }
+
+/* ==========================================================================
+   LAYOUT & RESPONSIVE FIXES
+   ==========================================================================
+   DEĞİŞİKLİKLER:
+   - Not defteri açılınca workspace layout düzgün ayarlanır
+   - Tablet'te not defteri overlay olarak açılır (output panel kaybolmaz)
+   - Mobilde her şey dikey sıralanır
+   - Header elemanları küçük ekranlarda uyumlu hale gelir
+   - Uyarı metni taşması düzeltildi
+   ========================================================================== */
+
+/* --- UYARI BANNER METİN OVERFLOW FİX --- */
+.nb-warning-banner {
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.nb-warn-text {
+    overflow: hidden;
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* --- NOT DEFTERİ AÇIKKEN DESKTOP LAYOUT (≥1200px) ---
+   Notebook açılınca workspace'deki editor ve output panel
+   proportionally küçülür — hiçbiri kaybolmaz */
+@media (min-width: 1200px) {
+    /* Output panelin minimum genişliğini notebook için yeterince azalt */
+    .workspace.notebook-open #output-panel {
+        flex: 3 !important;
+        min-width: 220px !important;
+    }
+
+    .workspace.notebook-open #editor-wrapper {
+        flex: 5 !important;
+    }
+
+    .notebook-panel.open {
+        width: 380px;
+        min-width: 380px;
+    }
+}
+
+/* --- ORTA MASAÜSTÜ (1024px - 1199px) ---
+   Notebook yine flex içinde ama daha dar */
+@media (min-width: 1024px) and (max-width: 1199px) {
+    .workspace.notebook-open #output-panel {
+        flex: 2 !important;
+        min-width: 180px !important;
+    }
+
+    .workspace.notebook-open #editor-wrapper {
+        flex: 5 !important;
+    }
+
+    .notebook-panel.open {
+        width: 320px !important;
+        min-width: 320px !important;
+    }
+}
+
+/* --- TABLET LANDSCAPE (768px - 1023px) ---
+   Not defteri OVERLAY olarak açılır, output panel kaybolmaz
+   Üstten saydam blur arkaplan, üzerine fixed not defteri */
+@media (min-width: 768px) and (max-width: 1023px) {
+    /* Output panel min-width'i kaldır */
+    #output-panel {
+        min-width: 200px !important;
+    }
+
+    /* Notebook overlay moduna geç */
+    .notebook-panel {
+        position: fixed !important;
+        top: 65px !important;
+        right: 0 !important;
+        bottom: 35px !important;
+        z-index: 5000;
+        box-shadow: -12px 0 50px rgba(0, 0, 0, 0.85);
+        border-left: 1px solid rgba(255, 214, 0, 0.25) !important;
+        /* Flex boyutlarından bağımsız */
+        flex: none !important;
+    }
+
+    .notebook-panel.open {
+        width: 340px !important;
+        min-width: 340px !important;
+        overflow-y: auto !important;
+    }
+
+    /* Notebook açıkken workspace arkasına blur backdrop */
+    .workspace.notebook-open::after {
+        content: '';
+        position: fixed;
+        inset: 65px 340px 35px 0;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(2px);
+        z-index: 4999;
+        pointer-events: none;
+    }
+
+    /* Header tablet: biraz sıkıştır */
+    .glass-header {
+        padding: 0 16px;
+    }
+
+    .save-label {
+        display: none;
+    }
+
+    .btn-save-code {
+        padding: 7px 10px;
+    }
+
+    .brand-text {
+        font-size: 1.15rem;
+    }
+
+    .brand-edition {
+        display: none;
+    }
+}
+
+/* --- TABLET PORTRAIT + BÜYÜK TELEFON (600px - 767px) ---
+   Workspace dikey sıralanır, notebook full-screen overlay */
+@media (min-width: 600px) and (max-width: 767px) {
+    body {
+        overflow: hidden;
+    }
+
+    .workspace {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    #editor-wrapper {
+        flex: none !important;
+        height: 52vh;
+        border-right: none !important;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    #output-panel {
+        flex: none !important;
+        height: 28vh;
+        min-width: unset !important;
+    }
+
+    /* Notebook full overlay */
+    .notebook-panel {
+        position: fixed !important;
+        top: 0 !important;
+        right: -100% !important;
+        bottom: 0 !important;
+        width: 85vw !important;
+        min-width: unset !important;
+        z-index: 9500;
+        transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: -8px 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    .notebook-panel.open {
+        right: 0 !important;
+        width: 85vw !important;
+        min-width: unset !important;
+        overflow-y: auto !important;
+    }
+
+    /* Backdrop */
+    .workspace.notebook-open::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 9400;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    /* Header */
+    .glass-header {
+        padding: 0 12px;
+        height: 58px;
+    }
+
+    .save-label { display: none; }
+    .brand-edition { display: none; }
+    .brand-text { font-size: 1.1rem; }
+
+    .toolbar-right { gap: 8px; }
+
+    .lang-select {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+    }
+
+    .btn-save-code { padding: 6px 10px; }
+}
+
+/* --- MOBİL (< 600px) ---
+   Tam responsive mobil düzen */
+@media (max-width: 599px) {
+    body {
+        overflow: hidden;
+    }
+
+    /* APP CONTAINER */
+    .app-container {
+        height: 100dvh; /* Dynamic viewport height for mobile */
+    }
+
+    /* HEADER: kompakt */
+    .glass-header {
+        height: auto;
+        min-height: 56px;
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .brand-area {
+        gap: 8px;
+    }
+
+    .brand-text {
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+    }
+
+    .brand-edition { display: none; }
+
+    .logo-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Kaydet butonu: sadece ikon */
+    .btn-save-code {
+        padding: 6px 8px;
+    }
+
+    .save-label { display: none !important; }
+
+    /* Toolbar sağ */
+    .toolbar-right {
+        gap: 6px;
+    }
+
+    .btn-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+
+    .lang-select {
+        font-size: 0.75rem;
+        padding: 5px 6px;
+        max-width: 130px;
+    }
+
+    .cyber-button-large {
+        height: 34px;
+        padding: 0 16px;
+    }
+
+    .btn-text { font-size: 0.8rem; }
+
+    /* WORKSPACE: dikey sıralama */
+    .workspace {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    #editor-wrapper {
+        flex: none !important;
+        height: 50vh;
+        min-height: 200px;
+        border-right: none !important;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    #editor-container {
+        height: 100%;
+    }
+
+    #output-panel {
+        flex: none !important;
+        height: auto;
+        min-height: 25vh;
+        min-width: unset !important;
+        max-height: 35vh;
+    }
+
+    .output-content {
+        padding: 12px;
+        font-size: 0.82rem;
+    }
+
+    /* NOTEBOOK: alt drawer gibi açılır (bottom sheet) */
+    .notebook-panel {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: -100% !important;
+        top: auto !important;
+        width: 100% !important;
+        min-width: unset !important;
+        height: 85vh;
+        border-left: none !important;
+        border-top: 2px solid rgba(255, 214, 0, 0.3) !important;
+        border-radius: 20px 20px 0 0;
+        z-index: 9500;
+        transition: bottom 0.38s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 -12px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    .notebook-panel.open {
+        bottom: 0 !important;
+        width: 100% !important;
+        min-width: unset !important;
+        overflow-y: auto !important;
+    }
+
+    /* Backdrop kapama */
+    .workspace.notebook-open::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9400;
+        pointer-events: auto;
+    }
+
+    /* Notebook kapat butonu daha büyük */
+    .nb-close-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1.6rem;
+    }
+
+    /* STATUS BAR mobil */
+    .glass-footer {
+        padding: 0 12px;
+        font-size: 0.65rem;
+    }
+
+    .status-center { display: none; }
+
+    /* TOAST mobil */
+    .cyber-toast {
+        font-size: 0.85rem;
+        padding: 8px 16px;
+        bottom: 12px;
+        max-width: 85vw;
+        text-align: center;
+    }
+
+    /* AI Widget mobil */
+    .ai-toggle-btn {
+        width: 56px;
+        height: 56px;
+    }
+
+    .ai-chat-panel {
+        width: calc(100vw - 20px) !important;
+        max-width: 100vw;
+        right: 10px;
+        left: 10px;
+    }
+
+    /* Modal mobil */
+    .cyber-modal {
+        width: 95vw !important;
+        margin: 10px;
+    }
+
+    .modal-body {
+        max-height: 60vh;
+    }
+}
+
+/* --- ÇÖZÜNÜRLÜK YÜKSEKSELEKTİF: çok geniş ekranlar (≥1600px) --- */
+@media (min-width: 1600px) {
+    .notebook-panel.open {
+        width: 440px !important;
+        min-width: 440px !important;
+    }
+
+    .workspace.notebook-open #output-panel {
+        min-width: 280px !important;
+    }
+}
+
+/* --- OUTPUT PANEL min-width GENEL OVERRIDE ---
+   Mevcut CSS'de 300px olan bu değer küçük ekranlarda taşmaya yol açıyor */
+@media (max-width: 1199px) {
+    #output-panel {
+        min-width: unset !important;
+    }
+}
+
+/* --- NOTEBOOK PANEL: Flexbox'tan bağımsız boyut yönetimi ---
+   Kapalıyken width:0 ve flex içinden çıkmaz gibi davranır */
+.notebook-panel {
+    flex-shrink: 0 !important;
+}

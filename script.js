@@ -1113,13 +1113,16 @@ window.toggleNotebook = function () {
     const panel = document.getElementById('notebook-panel');
     const btn   = document.getElementById('notebookToggle');
     const isOpen = panel.classList.contains('open');
+    const workspace = document.querySelector('.workspace');
 
     if (isOpen) {
         panel.classList.remove('open');
         btn.classList.remove('active');
+        if (workspace) workspace.classList.remove('notebook-open');
     } else {
         panel.classList.add('open');
         btn.classList.add('active');
+        if (workspace) workspace.classList.add('notebook-open');
         renderNotebook();
         showNotebookWarning();
     }
@@ -1428,3 +1431,43 @@ function highlightCode(code, lang) {
 
     return safe;
 }
+
+// ============================================================
+// --- RESPONSIVE NOTEBOOK: Backdrop click kapatma ---
+// Tablet/mobil de ::after pseudo-element tıklanınca notebook kapanır
+// Bunu event delegation ile yakalarız (workspace'in kendisini dinle)
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const workspace = document.querySelector('.workspace');
+    if (workspace) {
+        workspace.addEventListener('click', function (e) {
+            // Yalnızca backdrop alanına (workspace'in kendisine) tıklanmışsa
+            // ve notebook açıksa kapat
+            const panel = document.getElementById('notebook-panel');
+            if (!panel || !panel.classList.contains('open')) return;
+
+            // Tıklama notebook panelinin içinde mi?
+            if (!panel.contains(e.target)) {
+                const isMobileOrTablet = window.innerWidth < 1024;
+                if (isMobileOrTablet) {
+                    toggleNotebook();
+                }
+            }
+        });
+    }
+
+    // Pencere boyutu değişince notebook paneli resetle (layout kırılmasını önle)
+    let resizeTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            const panel = document.getElementById('notebook-panel');
+            if (panel && panel.classList.contains('open')) {
+                // Panel açıksa Monaco editörünü yeniden layout'a al
+                if (typeof editor !== 'undefined' && editor) {
+                    editor.layout();
+                }
+            }
+        }, 150);
+    });
+});
