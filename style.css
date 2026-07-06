@@ -1331,6 +1331,8 @@ body.light-mode .notebook-panel {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* ensure scrolling doesn't cut off shadows */
+    padding-bottom: 24px;
 }
 
 /* BOŞ DURUM */
@@ -1376,6 +1378,7 @@ body.light-mode .notebook-panel {
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: cardSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
 }
 
 @keyframes cardSlideIn {
