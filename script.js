@@ -1108,6 +1108,8 @@ function saveNotes(notes) {
 
 /**
  * Not defteri panelini aç/kapat
+ * ÖNEMLİ: Kapatırken resizer'ın bıraktığı inline stilleri temizle
+ * yoksa CSS class'ı (width:0) çalışmaz ve panel kapanmaz.
  */
 window.toggleNotebook = function () {
     const panel = document.getElementById('notebook-panel');
@@ -1116,6 +1118,9 @@ window.toggleNotebook = function () {
     const workspace = document.querySelector('.workspace');
 
     if (isOpen) {
+        // KAPATMA: Önce inline stilleri temizle
+        panel.style.width = '';
+        panel.style.minWidth = '';
         panel.classList.remove('open');
         btn.classList.remove('active');
         if (workspace) workspace.classList.remove('notebook-open');
@@ -1126,6 +1131,18 @@ window.toggleNotebook = function () {
         renderNotebook();
         showNotebookWarning();
     }
+
+    // Editor ve output paneli flex layout'a sıfırla
+    // (splitter drag'ın bıraktığı pixel genişlikleri temizle)
+    const ew = document.getElementById('editor-wrapper');
+    const op = document.getElementById('output-panel');
+    if (ew) { ew.style.flex = ''; ew.style.width = ''; }
+    if (op) { op.style.flex = ''; op.style.width = ''; }
+
+    // Monaco editörü yeniden layout'a al
+    setTimeout(function () {
+        if (typeof editor !== 'undefined' && editor) editor.layout();
+    }, 400);
 };
 
 /**
@@ -1473,21 +1490,30 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ============================================================
-// ===== SÜRÜKLENEBİLİR PANEL AYIRICILAR (SPLITTERS) =====
-// Profesyonel IDE deneyimi: mousedown → mousemove → mouseup
-// ile panel boyutlarını gerçek zamanlı değiştirme.
-// requestAnimationFrame ile 60fps performanslı sürükleme.
+// ===== SÜRÜKLENEBİLİR PANEL AYIRICILAR (SPLITTERS) v2 =====
+// v2 DÜZELTMELERİ:
+// - Drag bitince flex ratio'ya dönüştürme (pixel kalmaması)
+// - Notebook resizer: panel sınırına göre hesaplama
+// - toggleNotebook ile uyum: inline stiller temizlenir
 // ============================================================
 
 (function () {
     'use strict';
 
-    // --- YARDIMCI ---
     function layoutEditor() {
         if (typeof editor !== 'undefined' && editor) {
             editor.layout();
         }
     }
+
+    // Panelleri flex layout'a sıfırla (global erişilebilir)
+    window._resetPanelLayout = function () {
+        const ew = document.getElementById('editor-wrapper');
+        const op = document.getElementById('output-panel');
+        if (ew) { ew.style.flex = ''; ew.style.width = ''; }
+        if (op) { op.style.flex = ''; op.style.width = ''; }
+        setTimeout(layoutEditor, 50);
+    };
 
     // ==========================================================
     // 1) ANA SPLITTER: Editor ↔ Output Panel
@@ -1499,6 +1525,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (mainSplitter && editorWrapper && outputPanel) {
         let isDragging = false;
         let rafId = null;
+        let startX = 0;
+        let startEditorW = 0;
+        let startOutputW = 0;
 
         mainSplitter.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -1506,23 +1535,17 @@ document.addEventListener('DOMContentLoaded', function () {
             mainSplitter.classList.add('dragging');
             document.body.classList.add('splitter-dragging');
 
-            // Mevcut boyutları px'e çevir (flex'ten çıkar)
-            const editorRect = editorWrapper.getBoundingClientRect();
-            const outputRect = outputPanel.getBoundingClientRect();
+            startX = e.clientX;
+            startEditorW = editorWrapper.getBoundingClientRect().width;
+            startOutputW = outputPanel.getBoundingClientRect().width;
+
+            // Geçici olarak pixel moduna geç
             editorWrapper.style.flex = 'none';
-            editorWrapper.style.width = editorRect.width + 'px';
+            editorWrapper.style.width = startEditorW + 'px';
             outputPanel.style.flex = 'none';
-            outputPanel.style.width = outputRect.width + 'px';
+            outputPanel.style.width = startOutputW + 'px';
 
-            const workspace = editorWrapper.parentElement;
-            const workspaceRect = workspace.getBoundingClientRect();
-
-            // Notebook panelin genişliğini hesaba kat
-            const notebookPanel = document.getElementById('notebook-panel');
-            const nbWidth = notebookPanel ? notebookPanel.getBoundingClientRect().width : 0;
-            const splitterW = mainSplitter.getBoundingClientRect().width;
-            const availableWidth = workspaceRect.width - nbWidth - splitterW;
-
+            const totalAvailable = startEditorW + startOutputW;
             const minEditor = 200;
             const minOutput = 150;
 
@@ -1531,18 +1554,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (rafId) cancelAnimationFrame(rafId);
 
                 rafId = requestAnimationFrame(function () {
-                    const mouseX = e2.clientX - workspaceRect.left;
-                    let newEditorW = mouseX;
-                    let newOutputW = availableWidth - newEditorW;
+                    const delta = e2.clientX - startX;
+                    let newEditorW = startEditorW + delta;
+                    let newOutputW = totalAvailable - newEditorW;
 
-                    // Min/Max kısıtları
+                    // Kısıtlar
                     if (newEditorW < minEditor) {
                         newEditorW = minEditor;
-                        newOutputW = availableWidth - newEditorW;
+                        newOutputW = totalAvailable - newEditorW;
                     }
                     if (newOutputW < minOutput) {
                         newOutputW = minOutput;
-                        newEditorW = availableWidth - newOutputW;
+                        newEditorW = totalAvailable - newOutputW;
                     }
 
                     editorWrapper.style.width = newEditorW + 'px';
@@ -1558,6 +1581,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 if (rafId) cancelAnimationFrame(rafId);
+
+                // Drag sonucu: pixel genişlikleri flex ratio'ya dönüştür
+                const finalEditorW = editorWrapper.getBoundingClientRect().width;
+                const finalOutputW = outputPanel.getBoundingClientRect().width;
+                const total = finalEditorW + finalOutputW;
+                if (total > 0) {
+                    const editorRatio = Math.round((finalEditorW / total) * 100) / 10;
+                    const outputRatio = Math.round((finalOutputW / total) * 100) / 10;
+                    editorWrapper.style.flex = editorRatio.toString();
+                    editorWrapper.style.width = '';
+                    outputPanel.style.flex = outputRatio.toString();
+                    outputPanel.style.width = '';
+                }
                 layoutEditor();
             }
 
@@ -1565,11 +1601,11 @@ document.addEventListener('DOMContentLoaded', function () {
             document.addEventListener('mouseup', onMouseUp);
         });
 
-        // Çift tıklama ile varsayılana dön (60/40 oranı)
+        // Çift tıklama ile varsayılana dön
         mainSplitter.addEventListener('dblclick', function () {
-            editorWrapper.style.flex = '6';
+            editorWrapper.style.flex = '';
             editorWrapper.style.width = '';
-            outputPanel.style.flex = '4';
+            outputPanel.style.flex = '';
             outputPanel.style.width = '';
             layoutEditor();
         });
@@ -1584,6 +1620,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nbResizer && nbPanel) {
         let isDragging = false;
         let rafId = null;
+        let startX = 0;
+        let startWidth = 0;
 
         nbResizer.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -1594,23 +1632,23 @@ document.addEventListener('DOMContentLoaded', function () {
             nbResizer.classList.add('dragging');
             document.body.classList.add('splitter-dragging');
 
-            const workspace = nbPanel.parentElement;
-            const workspaceRect = workspace.getBoundingClientRect();
+            startX = e.clientX;
+            startWidth = nbPanel.getBoundingClientRect().width;
 
             const minWidth = 250;
-            const maxWidth = Math.min(700, workspaceRect.width * 0.55);
+            const maxWidth = Math.min(700, window.innerWidth * 0.55);
 
             function onMouseMove(e2) {
                 if (!isDragging) return;
                 if (rafId) cancelAnimationFrame(rafId);
 
                 rafId = requestAnimationFrame(function () {
-                    // Mouse X'ten yeni genişlik hesapla (sağ kenardan sola)
-                    const newWidth = workspaceRect.right - e2.clientX;
-                    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+                    // Sola sürükleme = genişletme (delta negatif = büyüt)
+                    const delta = startX - e2.clientX;
+                    const newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + delta));
 
-                    nbPanel.style.width = clampedWidth + 'px';
-                    nbPanel.style.minWidth = clampedWidth + 'px';
+                    nbPanel.style.width = newWidth + 'px';
+                    nbPanel.style.minWidth = newWidth + 'px';
                     layoutEditor();
                 });
             }
@@ -1629,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.addEventListener('mouseup', onMouseUp);
         });
 
-        // Çift tıklama ile varsayılana dön (380px)
+        // Çift tıklama ile varsayılana dön
         nbResizer.addEventListener('dblclick', function (e) {
             e.stopPropagation();
             nbPanel.style.width = '';
@@ -1646,30 +1684,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
         handle.addEventListener('touchstart', function (e) {
             const touch = e.touches[0];
-            const mouseDown = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                bubbles: true
-            });
-            handle.dispatchEvent(mouseDown);
+            handle.dispatchEvent(new MouseEvent('mousedown', {
+                clientX: touch.clientX, clientY: touch.clientY, bubbles: true
+            }));
         }, { passive: false });
 
         document.addEventListener('touchmove', function (e) {
             if (!document.body.classList.contains('splitter-dragging')) return;
             e.preventDefault();
             const touch = e.touches[0];
-            const mouseMove = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                bubbles: true
-            });
-            document.dispatchEvent(mouseMove);
+            document.dispatchEvent(new MouseEvent('mousemove', {
+                clientX: touch.clientX, clientY: touch.clientY, bubbles: true
+            }));
         }, { passive: false });
 
         document.addEventListener('touchend', function () {
             if (!document.body.classList.contains('splitter-dragging')) return;
-            const mouseUp = new MouseEvent('mouseup', { bubbles: true });
-            document.dispatchEvent(mouseUp);
+            document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
         });
     }
 
