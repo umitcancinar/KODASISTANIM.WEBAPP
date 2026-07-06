@@ -2065,11 +2065,15 @@ body.light-mode .panel-splitter:hover .splitter-line {
     position: relative;
 }
 
-/* Sürükleme sırasında metin seçimini engelle */
+/* Sürükleme sırasında metin seçimini engelle ve animasyonları durdur */
 body.splitter-dragging {
     user-select: none !important;
     -webkit-user-select: none !important;
     cursor: col-resize !important;
+}
+
+body.splitter-dragging * {
+    transition: none !important;
 }
 
 body.splitter-dragging iframe,
